@@ -14,7 +14,11 @@ options.add_argument("--headless=new")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-gpu")
+options.add_argument("--window-size=1920,1080")
+options.add_argument("--start-maximized")
 options.binary_location = "/usr/bin/google-chrome-stable"
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_experimental_option("useAutomationExtension", False)
 
 # Initialize Chrome driver with Service
 service = Service(executable_path="/usr/local/bin/chromedriver")
@@ -143,12 +147,32 @@ xpaths = {
     "back_button": '//*[@id="featurecardPanel"]/div/div/div[3]/div[1]/div'
 }
 
+def switch_to_new_tab(timeout=10):
+    print("Attempting to switch to new tab")
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if len(driver.window_handles) > 1:
+            driver.switch_to.window(driver.window_handles[1])
+            print("Successfully switched to new tab")
+            return True
+        time.sleep(0.5)
+    print("Failed to switch to new tab")
+    return False
+
+def ensure_element_visible(element):
+    try:
+        driver.execute_script("arguments[0].style.zIndex = '99999';", element)
+        driver.execute_script("arguments[0].style.position = 'relative';", element)
+    except Exception as e:
+        print(f"Visibility adjustment failed: {str(e)}")
+
 def safe_click(element, max_retries=3):
     for attempt in range(max_retries):
         try:
-            driver.execute_script("arguments[0].scrollIntoView();", element)
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+            ensure_element_visible(element)
             time.sleep(1)
-            element.click()
+            driver.execute_script("arguments[0].click();", element)
             print(f"Successfully clicked element after {attempt + 1} attempts")
             return True
         except Exception as e:
@@ -170,9 +194,17 @@ def extract_coordinates(url):
         print(f"Coordinate extraction error: {str(e)}")
         return None, None
 
-# ... [rest of the helper functions remain unchanged]
+def generate_filename(parent_folder, child_folder):
+    parent = parent_folder.replace(" ", "_").replace("/", "_").lower()
+    child = child_folder.replace(" ", "_").replace("/", "_").lower()
+    return f"{parent}_{child}.csv"
 
 try:
+    # Start virtual display (required for headless on Linux)
+    print("Starting virtual display")
+    os.system("Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &")
+    os.environ['DISPLAY'] = ':99'
+
     for folder_name, folder_data in xpaths["parent_folders"].items():
         print(f"\n=== Processing parent folder: {folder_name} ===")
         closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
@@ -231,7 +263,7 @@ try:
                             "Index": index
                         })
 
-                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
+                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"]))
                         print("Clicking back button")
                         safe_click(back_button)
                         time.sleep(1)
@@ -254,3 +286,4 @@ except Exception as e:
 finally:
     driver.quit()
     print("Browser closed")
+    os.system("pkill Xvfb")  # Clean up virtual display
