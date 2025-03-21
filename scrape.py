@@ -7,6 +7,12 @@ from selenium.webdriver.chrome.options import Options
 import time
 import csv
 import os
+import sys
+import functools
+import psutil
+
+# Force immediate flushing of print statements
+print = functools.partial(print, flush=True)
 
 # Configure Chrome options
 options = Options()
@@ -26,6 +32,7 @@ driver = webdriver.Chrome(service=service, options=options)
 
 # Open the Google My Maps link
 url = "https://www.google.com/maps/d/viewer?mid=1UUfwmW5YntQiVznItYrXwHYn1D9eGkgU&femb=1&ll=5.008162640544454%2C-68.52131693613987&z=1"
+print("Navigating to URL...")
 driver.get(url)
 
 # Wait for the map to load
@@ -147,8 +154,27 @@ xpaths = {
     "back_button": '//*[@id="featurecardPanel"]/div/div/div[3]/div[1]/div'
 }
 
+# Global status tracking
+global_status = {
+    'total_pins_processed': 0,
+    'current_pin': None,
+    'current_folder': None,
+    'start_time': time.time(),
+    'success_rate': 0
+}
+
+def print_status():
+    elapsed = time.time() - global_status['start_time']
+    print(f"\n――――――――――――――――――――――――――――――――――――――――――――")
+    print(f"Current Folder: {global_status['current_folder']}")
+    print(f"Processing Pin: {global_status['current_pin']}")
+    print(f"Elapsed Time: {elapsed:.2f}s")
+    print(f"Success Rate: {global_status['success_rate']:.1%}")
+    print(f"Memory Usage: {psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024:.2f} MB")
+    print(f"――――――――――――――――――――――――――――――――――――――――――――\n")
+
 def switch_to_new_tab(timeout=10):
-    print("Attempting to switch to new tab")
+    print("Attempting to switch to new tab...")
     start_time = time.time()
     while time.time() - start_time < timeout:
         if len(driver.window_handles) > 1:
@@ -195,13 +221,15 @@ def extract_coordinates(url):
         return None, None
 
 def generate_filename(parent_folder, child_folder):
+    output_dir = "/home/ec2-user/extracted_data"  # Custom directory
+    os.makedirs(output_dir, exist_ok=True)  # Create directory if it doesn't exist
     parent = parent_folder.replace(" ", "_").replace("/", "_").lower()
     child = child_folder.replace(" ", "_").replace("/", "_").lower()
-    return f"{parent}_{child}.csv"
+    return os.path.join(output_dir, f"{parent}_{child}.csv")
 
 try:
     # Start virtual display (required for headless on Linux)
-    print("Starting virtual display")
+    print("Starting virtual display...")
     os.system("Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &")
     os.environ['DISPLAY'] = ':99'
 
@@ -225,14 +253,30 @@ try:
                 pins = []
                 for index in range(1, subfolder_data['pins'] + 1):
                     try:
+                        global_status['current_pin'] = f"{index}/{subfolder_data['pins']}"
+                        global_status['current_folder'] = f"{folder_name} > {subfolder_name}"
+                        print_status()
+
                         print(f"\nProcessing pin {index} of {subfolder_data['pins']}")
                         location_xpath = f'{subfolder_data["location_base"]}[{index}]'
-                        location = wait.until(EC.element_to_be_clickable((By.XPATH, location_xpath)))
                         
+                        # Add retry logic for element location
+                        for attempt in range(3):
+                            try:
+                                location = wait.until(EC.element_to_be_clickable((By.XPATH, location_xpath)))
+                                break
+                            except:
+                                print(f"Element not found, retrying ({attempt + 1}/3)")
+                                driver.execute_script("window.scrollBy(0, 100);")
+                                time.sleep(1)
+                        else:
+                            print(f"Skipping pin {index} - not found after 3 attempts")
+                            continue
+
                         print(f"Clicking pin #{index}")
                         if not safe_click(location):
                             continue
-                        
+
                         time.sleep(1)
                         name = driver.find_element(By.XPATH, xpaths["name"]).text
                         description = driver.find_element(By.XPATH, xpaths["description"]).text
@@ -263,13 +307,17 @@ try:
                             "Index": index
                         })
 
-                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
+                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"]))
                         print("Clicking back button")
                         safe_click(back_button)
                         time.sleep(1)
 
+                        global_status['total_pins_processed'] += 1
+                        global_status['success_rate'] = global_status['total_pins_processed'] / index
+
                     except Exception as e:
                         print(f"Error processing pin {index}: {str(e)}")
+                        driver.save_screenshot(f"error_{index}.png")
 
                 filename = generate_filename(folder_name, subfolder_name)
                 with open(filename, "w", newline="", encoding="utf-8") as file:
@@ -277,7 +325,7 @@ try:
                     writer.writeheader()
                     writer.writerows(pins)
                 print(f"Successfully saved {len(pins)} entries to {filename}")
-                
+
             except Exception as e:
                 print(f"Subfolder error: {str(e)}")
 
