@@ -263,7 +263,7 @@ try:
                             "Index": index
                         })
 
-                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"]))
+                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
                         print("Clicking back button")
                         safe_click(back_button)
                         time.sleep(1)
