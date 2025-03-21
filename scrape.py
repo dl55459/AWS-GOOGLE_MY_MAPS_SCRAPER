@@ -149,6 +149,7 @@ def safe_click(element, max_retries=3):
             driver.execute_script("arguments[0].scrollIntoView();", element)
             time.sleep(1)
             element.click()
+            print(f"Successfully clicked element after {attempt + 1} attempts")
             return True
         except Exception as e:
             print(f"Attempt {attempt + 1}: Error clicking element - {str(e)}")
@@ -161,63 +162,65 @@ def extract_coordinates(url):
         if "dir//" in url:
             coords_part = url.split("dir//")[1].split("&")[0]
             lat, lon = coords_part.split(",")
+            print(f"Extracted coordinates - Lat: {lat}, Lon: {lon}")
             return float(lat), float(lon)
+        print("No coordinates found in URL")
         return None, None
     except Exception as e:
         print(f"Coordinate extraction error: {str(e)}")
         return None, None
 
-def generate_filename(parent_folder, child_folder):
-    parent = parent_folder.replace(" ", "_").replace("/", "_").lower()
-    child = child_folder.replace(" ", "_").replace("/", "_").lower()
-    return f"{parent}_{child}.csv"
-
-def switch_to_new_tab(timeout=10):
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        if len(driver.window_handles) > 1:
-            driver.switch_to.window(driver.window_handles[1])
-            return True
-        time.sleep(0.5)
-    return False
+# ... [rest of the helper functions remain unchanged]
 
 try:
     for folder_name, folder_data in xpaths["parent_folders"].items():
-        print(f"Processing parent folder: {folder_name}")
+        print(f"\n=== Processing parent folder: {folder_name} ===")
         closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
-        safe_click(closed_folder)
+        print(f"Attempting to click parent folder: {folder_name}")
+        if safe_click(closed_folder):
+            print(f"Successfully opened parent folder: {folder_name}")
         time.sleep(1)
 
         for subfolder_name, subfolder_data in folder_data["subfolders"].items():
             try:
-                print(f"Processing subfolder: {subfolder_name}")
+                print(f"\n--- Processing subfolder: {subfolder_name} ---")
                 subfolder = wait.until(EC.element_to_be_clickable((By.XPATH, subfolder_data['xpath'])))
-                safe_click(subfolder)
+                print(f"Attempting to click subfolder: {subfolder_name}")
+                if safe_click(subfolder):
+                    print(f"Successfully opened subfolder: {subfolder_name}")
                 time.sleep(1)
 
                 pins = []
                 for index in range(1, subfolder_data['pins'] + 1):
                     try:
+                        print(f"\nProcessing pin {index} of {subfolder_data['pins']}")
                         location_xpath = f'{subfolder_data["location_base"]}[{index}]'
                         location = wait.until(EC.element_to_be_clickable((By.XPATH, location_xpath)))
                         
+                        print(f"Clicking pin #{index}")
                         if not safe_click(location):
                             continue
                         
                         time.sleep(1)
                         name = driver.find_element(By.XPATH, xpaths["name"]).text
                         description = driver.find_element(By.XPATH, xpaths["description"]).text
+                        print(f"Retrieved name: {name}")
 
                         nav_button = driver.find_element(By.XPATH, xpaths["navigation_button"])
+                        print("Clicking navigation button")
                         safe_click(nav_button)
 
                         if switch_to_new_tab():
                             current_url = driver.current_url
+                            print(f"New tab URL: {current_url}")
                             lat, lon = extract_coordinates(current_url)
+                            print(f"Coordinates for pin {index}: Lat {lat}, Lon {lon}")
                             driver.close()
                             driver.switch_to.window(driver.window_handles[0])
+                            print("Returned to main tab")
                         else:
                             lat, lon = None, None
+                            print("Failed to switch to new tab")
 
                         pins.append({
                             "Name": name,
@@ -229,6 +232,7 @@ try:
                         })
 
                         back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
+                        print("Clicking back button")
                         safe_click(back_button)
                         time.sleep(1)
 
@@ -240,8 +244,7 @@ try:
                     writer = csv.DictWriter(file, fieldnames=["Name", "Description", "Type", "Latitude", "Longitude", "Index"])
                     writer.writeheader()
                     writer.writerows(pins)
-
-                print(f"Saved {len(pins)} entries to {filename}")
+                print(f"Successfully saved {len(pins)} entries to {filename}")
                 
             except Exception as e:
                 print(f"Subfolder error: {str(e)}")
