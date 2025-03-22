@@ -246,19 +246,20 @@ def generate_filename(parent_folder, child_folder):
 def find_name_and_description(driver):
     """
     Dynamically find the name and description elements on Google My Maps.
+    Ensures correct handling of WebElements.
     """
     # Possible XPath patterns for name
     name_xpaths = [
-        '//div[contains(@class, "fontTitleSmall")]',  # Most common name class
-        '//div[contains(@class, "fontHeadlineSmall")]',  # Alternative name class
-        '//h1'  # Some maps may use <h1> for names
+        '//div[contains(@class, "fontTitleSmall")]',
+        '//div[contains(@class, "fontHeadlineSmall")]',
+        '//h1'
     ]
 
     # Possible XPath patterns for description
     description_xpaths = [
-        '//div[contains(@class, "fontBodyMedium")]',  # Common class for descriptions
-        '//div[contains(@class, "fontBodySmall")]',  # Alternative class
-        '//p'  # Some maps may use <p> for descriptions
+        '//div[contains(@class, "fontBodyMedium")]',
+        '//div[contains(@class, "fontBodySmall")]',
+        '//p'
     ]
 
     name_element = None
@@ -268,19 +269,19 @@ def find_name_and_description(driver):
     for xpath in name_xpaths:
         elements = driver.find_elements(By.XPATH, xpath)
         if elements:
-            name_element = elements[0]  # Use the first matching element
+            name_element = elements[0]  # Ensure we assign a WebElement
             break
 
     # Try to find the description
     for xpath in description_xpaths:
         elements = driver.find_elements(By.XPATH, xpath)
         if elements:
-            description_element = elements[0]  # Use the first matching element
+            description_element = elements[0]  # Ensure we assign a WebElement
             break
 
-    # Extract text safely
-    name_text = name_element.text.strip() if name_element else "No Name Found"
-    description_text = description_element.text.strip() if description_element else "No Description Found"
+    # Ensure name_element and description_element are valid before accessing `.text`
+    name_text = name_element.text.strip() if name_element and hasattr(name_element, 'text') else "No Name Found"
+    description_text = description_element.text.strip() if description_element and hasattr(description_element, 'text') else "No Description Found"
 
     return name_text, description_text
 
