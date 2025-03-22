@@ -30,9 +30,9 @@ Install all necesary dependencies:
 ---------------------------------------------------
 Running session:
 
-to start new session: tmux new -s session_name
-to detatch from session: CTRL+B, D
-to attach to session: tmux attach -t session_name
-to terminate a session: CTRL+C, and input text: exit
-to list all sessions: tmux ls
+1) to start new session: tmux new -s session_name
+2) to detatch from session: CTRL+B, D
+3) to attach to session: tmux attach -t session_name
+4) to terminate a session: CTRL+C, and input text: exit
+5) to list all sessions: tmux ls
 ---------------------------------------------------
