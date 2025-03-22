@@ -36,3 +36,8 @@ Running session:
 4) to terminate a session: CTRL+C, and input text: exit
 5) to list all sessions: tmux ls
 ---------------------------------------------------
+
+---------------------------------------------------
+SSH:
+scp -i I:/proj/AWS/Scraper.pem ubuntu@18.194.233.107:/home/ubuntu/AWS-GOOGLE_MY_MAPS_SCRAPER/OUTPUT/*.csv I:/proj/AWS/AWS_output/
+---------------------------------------------------
