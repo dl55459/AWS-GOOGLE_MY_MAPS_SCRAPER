@@ -259,9 +259,13 @@ def find_name_and_description_xpaths():
         for div in divs:
             text = div.text.lower()
             if "name" in text:
-                name_xpath = div.find_element(By.XPATH, './div[2]').get_attribute("xpath")
+                # Get the XPath of the parent div and increment the last div index by 1
+                parent_xpath = driver.execute_script("return arguments[0].parentNode;", div).get_attribute("xpath")
+                name_xpath = f"{parent_xpath}/div[2]"  # Increment last div index by 1
             elif "description" in text:
-                description_xpath = div.find_element(By.XPATH, './div[2]').get_attribute("xpath")
+                # Get the XPath of the parent div and increment the last div index by 1
+                parent_xpath = driver.execute_script("return arguments[0].parentNode;", div).get_attribute("xpath")
+                description_xpath = f"{parent_xpath}/div[2]"  # Increment last div index by 1
         
         return name_xpath, description_xpath
     except Exception as e:
