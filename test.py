@@ -243,42 +243,23 @@ def generate_filename(parent_folder, child_folder):
     child = child_folder.replace(" ", "_").replace("/", "_").lower()
     return os.path.join(output_dir, f"{parent}_{child}.csv")
 
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
 def find_name_and_description(driver):
     """
-    Dynamically find the name and description elements.
+    Dynamically find the name and description elements based on the observed patterns.
     """
-    # Common patterns for name and description
-    name_candidates = [
-        '//div[contains(@class, "name")]',
-        '//div[contains(@class, "title")]',
-        '//div[contains(@class, "heading")]',
-        '//h1',
-        '//h2',
-        '//h3',
-        '//span[contains(@class, "name")]',
-        '//div[@aria-label="Name"]',
-    ]
-
-    description_candidates = [
-        '//div[contains(@class, "description")]',
-        '//div[contains(@class, "details")]',
-        '//div[contains(@class, "info")]',
-        '//p',
-        '//span[contains(@class, "description")]',
-        '//div[@aria-label="Description"]',
-    ]
+    # Base XPath for the feature card panel
+    base_xpath = '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]'
 
     # Try to find the name
     name_element = None
-    for xpath in name_candidates:
+    name_xpath_candidates = [
+        f'{base_xpath}/div[1]/div[2]',  # Common pattern for name
+        f'{base_xpath}/div[1]/div[2]/div',  # Alternative pattern
+    ]
+
+    for xpath in name_xpath_candidates:
         try:
-            name_element = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, xpath))
-            )
+            name_element = driver.find_element(By.XPATH, xpath)
             print(f"Found name using XPath: {xpath}")
             break
         except Exception as e:
@@ -287,11 +268,15 @@ def find_name_and_description(driver):
 
     # Try to find the description
     description_element = None
-    for xpath in description_candidates:
+    description_xpath_candidates = [
+        f'{base_xpath}/div[2]/div[2]',  # Common pattern for description
+        f'{base_xpath}/div[5]/div[2]',  # Alternative pattern for description
+        f'{base_xpath}/div/div[2]',  # Pattern for cases with no name
+    ]
+
+    for xpath in description_xpath_candidates:
         try:
-            description_element = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, xpath))
-            )
+            description_element = driver.find_element(By.XPATH, xpath)
             print(f"Found description using XPath: {xpath}")
             break
         except Exception as e:
@@ -299,6 +284,7 @@ def find_name_and_description(driver):
             continue
 
     return name_element, description_element
+
 try:
     # Start virtual display (required for headless on Linux)
     print("Starting virtual display...")
@@ -360,6 +346,7 @@ try:
                         name = name_element.text if name_element else "N/A"
                         description = description_element.text if description_element else "N/A"
                         print(f"Retrieved name: {name}")
+                        print(f"Retrieved description: {description}")
 
                         nav_button = driver.find_element(By.XPATH, xpaths["navigation_button"])
                         print("Clicking navigation button")
