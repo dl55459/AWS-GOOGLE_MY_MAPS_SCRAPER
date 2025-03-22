@@ -26,3 +26,4 @@ to start new session: tmux new -s session_name
 to detatch from session: CTRL+B, D
 to attach to session: tmux attach -t session_name
 to terminate a session: CTRL+C, and input text: exit
+to list all sessions: tmux ls
