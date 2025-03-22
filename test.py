@@ -250,18 +250,10 @@ def find_name_and_description(driver):
     # Common patterns for name and description
     name_candidates = [
         '//div[contains(@class, "name")]',
-        '//div[contains(@class, "title")]',
-        '//div[contains(@class, "heading")]',
-        '//h1',
-        '//h2',
-        '//h3',
     ]
 
     description_candidates = [
         '//div[contains(@class, "description")]',
-        '//div[contains(@class, "details")]',
-        '//div[contains(@class, "info")]',
-        '//p',
     ]
 
     # Try to find the name
