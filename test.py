@@ -243,48 +243,62 @@ def generate_filename(parent_folder, child_folder):
     child = child_folder.replace(" ", "_").replace("/", "_").lower()
     return os.path.join(output_dir, f"{parent}_{child}.csv")
 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 def find_name_and_description(driver):
     """
-    Dynamically find the name and description elements on Google My Maps.
-    Ensures correct handling of WebElements.
+    Dynamically find the name and description elements.
     """
-    # Possible XPath patterns for name
-    name_xpaths = [
-        '//div[contains(@class, "fontTitleSmall")]',
-        '//div[contains(@class, "fontHeadlineSmall")]',
-        '//h1'
+    # Common patterns for name and description
+    name_candidates = [
+        '//div[contains(@class, "name")]',
+        '//div[contains(@class, "title")]',
+        '//div[contains(@class, "heading")]',
+        '//h1',
+        '//h2',
+        '//h3',
+        '//span[contains(@class, "name")]',
+        '//div[@aria-label="Name"]',
     ]
 
-    # Possible XPath patterns for description
-    description_xpaths = [
-        '//div[contains(@class, "fontBodyMedium")]',
-        '//div[contains(@class, "fontBodySmall")]',
-        '//p'
+    description_candidates = [
+        '//div[contains(@class, "description")]',
+        '//div[contains(@class, "details")]',
+        '//div[contains(@class, "info")]',
+        '//p',
+        '//span[contains(@class, "description")]',
+        '//div[@aria-label="Description"]',
     ]
-
-    name_element = None
-    description_element = None
 
     # Try to find the name
-    for xpath in name_xpaths:
-        elements = driver.find_elements(By.XPATH, xpath)
-        if elements:
-            name_element = elements[0]  # Ensure we assign a WebElement
+    name_element = None
+    for xpath in name_candidates:
+        try:
+            name_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, xpath))
+            )
+            print(f"Found name using XPath: {xpath}")
             break
+        except Exception as e:
+            print(f"Failed to find name using XPath: {xpath} - {str(e)}")
+            continue
 
     # Try to find the description
-    for xpath in description_xpaths:
-        elements = driver.find_elements(By.XPATH, xpath)
-        if elements:
-            description_element = elements[0]  # Ensure we assign a WebElement
+    description_element = None
+    for xpath in description_candidates:
+        try:
+            description_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, xpath))
+            )
+            print(f"Found description using XPath: {xpath}")
             break
+        except Exception as e:
+            print(f"Failed to find description using XPath: {xpath} - {str(e)}")
+            continue
 
-    # Ensure name_element and description_element are valid before accessing `.text`
-    name_text = name_element.text.strip() if name_element and hasattr(name_element, 'text') else "No Name Found"
-    description_text = description_element.text.strip() if description_element and hasattr(description_element, 'text') else "No Description Found"
-
-    return name_text, description_text
-
+    return name_element, description_element
 try:
     # Start virtual display (required for headless on Linux)
     print("Starting virtual display...")
