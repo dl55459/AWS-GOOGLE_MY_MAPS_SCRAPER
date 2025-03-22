@@ -1,3 +1,5 @@
+import os
+import csv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -5,9 +7,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import time
-import csv
-import os
-import sys
 import functools
 import psutil
 
@@ -221,8 +220,11 @@ def extract_coordinates(url):
         return None, None
 
 def generate_filename(parent_folder, child_folder):
-    output_dir = "/home/ec2-user/extracted_data"  # Custom directory
-    os.makedirs(output_dir, exist_ok=True)  # Create directory if it doesn't exist
+    # Create OUTPUT directory if it doesn't exist
+    output_dir = os.path.join(os.getcwd(), "OUTPUT")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Generate filename
     parent = parent_folder.replace(" ", "_").replace("/", "_").lower()
     child = child_folder.replace(" ", "_").replace("/", "_").lower()
     return os.path.join(output_dir, f"{parent}_{child}.csv")
@@ -307,7 +309,7 @@ try:
                             "Index": index
                         })
 
-                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"]))
+                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
                         print("Clicking back button")
                         safe_click(back_button)
                         time.sleep(1)
