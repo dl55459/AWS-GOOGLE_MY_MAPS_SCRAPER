@@ -329,7 +329,7 @@ try:
                         time.sleep(1)
                         
                         # Dynamically find name and description XPaths
-                        name_xpath, description_xpath = find_name_and_description_xpaths()
+                        name_xpath, description_xpath = find_name_and_description_xpaths(driver)
                         
                         name = "N/A"
                         description = "N/A"
