@@ -248,29 +248,29 @@ def generate_filename(parent_folder, child_folder):
     child = child_folder.replace(" ", "_").replace("/", "_").lower()
     return os.path.join(output_dir, f"{parent}_{child}.csv")
 
-def find_name_and_description_xpaths():
+def find_name_and_description_xpaths(driver):
     try:
         # Find all div elements in the featurecardPanel
         divs = driver.find_elements(By.XPATH, '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div')
         
-        name_xpath = None
-        description_xpath = None
+        name_xpath = "N/A"
+        description_xpath = "N/A"
         
-        for div in divs:
+        for i, div in enumerate(divs, start=1):
             text = div.text.lower()
-            if "name" in text:
-                # Get the XPath of the parent div and increment the last div index by 1
-                parent_xpath = driver.execute_script("return arguments[0].parentNode;", div).get_attribute("xpath")
-                name_xpath = f"{parent_xpath}/div[2]"  # Increment last div index by 1
-            elif "description" in text:
-                # Get the XPath of the parent div and increment the last div index by 1
-                parent_xpath = driver.execute_script("return arguments[0].parentNode;", div).get_attribute("xpath")
-                description_xpath = f"{parent_xpath}/div[2]"  # Increment last div index by 1
+            
+            try:
+                if "name" in text:
+                    name_xpath = div.find_element(By.XPATH, f'./div[2]').get_attribute("outerHTML")
+                elif "description" in text:
+                    description_xpath = div.find_element(By.XPATH, f'./div[2]').get_attribute("outerHTML")
+            except Exception as e:
+                continue  # Skip if the div[2] does not exist
         
         return name_xpath, description_xpath
     except Exception as e:
         print(f"Error finding name and description XPaths: {str(e)}")
-        return None, None
+        return "N/A", "N/A"
 
 try:
     # Start virtual display (required for headless on Linux)
