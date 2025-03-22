@@ -245,36 +245,44 @@ def generate_filename(parent_folder, child_folder):
 
 def find_name_and_description(driver):
     """
-    Dynamically find the name and description elements.
+    Dynamically find the name and description elements on Google My Maps.
     """
-    # Common patterns for name and description
-    name_candidates = [
-        '//div[contains(@class, "name")]',
+    # Possible XPath patterns for name
+    name_xpaths = [
+        '//div[contains(@class, "fontTitleSmall")]',  # Most common name class
+        '//div[contains(@class, "fontHeadlineSmall")]',  # Alternative name class
+        '//h1'  # Some maps may use <h1> for names
     ]
 
-    description_candidates = [
-        '//div[contains(@class, "description")]',
+    # Possible XPath patterns for description
+    description_xpaths = [
+        '//div[contains(@class, "fontBodyMedium")]',  # Common class for descriptions
+        '//div[contains(@class, "fontBodySmall")]',  # Alternative class
+        '//p'  # Some maps may use <p> for descriptions
     ]
+
+    name_element = None
+    description_element = None
 
     # Try to find the name
-    name_element = None
-    for xpath in name_candidates:
-        try:
-            name_element = driver.find_element(By.XPATH, xpath)
+    for xpath in name_xpaths:
+        elements = driver.find_elements(By.XPATH, xpath)
+        if elements:
+            name_element = elements[0]  # Use the first matching element
             break
-        except:
-            continue
 
     # Try to find the description
-    description_element = None
-    for xpath in description_candidates:
-        try:
-            description_element = driver.find_element(By.XPATH, xpath)
+    for xpath in description_xpaths:
+        elements = driver.find_elements(By.XPATH, xpath)
+        if elements:
+            description_element = elements[0]  # Use the first matching element
             break
-        except:
-            continue
 
-    return name_element, description_element
+    # Extract text safely
+    name_text = name_element.text.strip() if name_element else "No Name Found"
+    description_text = description_element.text.strip() if description_element else "No Description Found"
+
+    return name_text, description_text
 
 try:
     # Start virtual display (required for headless on Linux)
