@@ -170,6 +170,7 @@ xpaths = {
 # Global status tracking
 global_status = {
     'total_pins_processed': 0,
+    'total_attempts': 0,  # Track total attempts (including failures)
     'current_pin': None,
     'current_folder': None,
     'start_time': time.time(),
@@ -185,6 +186,87 @@ def print_status():
     print(f"Success Rate: {global_status['success_rate']:.1%}")
     print(f"Memory Usage: {psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024:.2f} MB")
     print(f"――――――――――――――――――――――――――――――――――――――――――――\n")
+
+# In your pin processing loop:
+for index in range(last_processed_pin + 1, subfolder_data['pins'] + 1):
+    try:
+        global_status['current_pin'] = f"{index}/{subfolder_data['pins']}"
+        global_status['current_folder'] = f"{folder_name} > {subfolder_name}"
+        global_status['total_attempts'] += 1  # Increment total attempts
+
+        print_status()
+
+        # Clear the console before printing the "Processing pin" message
+        os.system('clear')
+        print(f"\nProcessing pin {index} of {subfolder_data['pins']}")
+
+        # Update the last processed pin
+        last_processed_pin = index
+
+        location_xpath = f'{subfolder_data["location_base"]}[{index}]'
+        
+        # Add retry logic for element location
+        for attempt in range(3):
+            try:
+                location = wait.until(EC.element_to_be_clickable((By.XPATH, location_xpath)))
+                break
+            except:
+                print(f"Element not found, retrying ({attempt + 1}/3)")
+                driver.execute_script("window.scrollBy(0, 100);")
+                time.sleep(1)
+        else:
+            print(f"Skipping pin {index} - not found after 3 attempts")
+            continue
+
+        print(f"Clicking pin #{index}")
+        if not safe_click(location):
+            continue
+
+        time.sleep(1)
+
+        # Dynamically find name and description
+        name_element, description_element = find_name_and_description(driver)
+        name = name_element.text if name_element else "N/A"
+        description = description_element.text if description_element else "N/A"
+        print(f"Retrieved name: {name}")
+        print(f"Retrieved description: {description}")
+
+        nav_button = driver.find_element(By.XPATH, xpaths["navigation_button"])
+        print("Clicking navigation button")
+        safe_click(nav_button)
+
+        if switch_to_new_tab():
+            current_url = driver.current_url
+            print(f"New tab URL: {current_url}")
+            lat, lon = extract_coordinates(current_url)
+            print(f"Coordinates for pin {index}: Lat {lat}, Lon {lon}")
+            driver.close()
+            driver.switch_to.window(driver.window_handles[0])
+            print("Returned to main tab")
+        else:
+            lat, lon = None, None
+            print("Failed to switch to new tab")
+
+        pins.append({
+            "Name": name,
+            "Description": description,
+            "Type": subfolder_name,
+            "Latitude": lat,
+            "Longitude": lon,
+            "Index": index
+        })
+
+        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
+        print("Clicking back button")
+        safe_click(back_button)
+        time.sleep(1)
+
+        global_status['total_pins_processed'] += 1  # Increment successfully processed pins
+        global_status['success_rate'] = global_status['total_pins_processed'] / global_status['total_attempts']
+
+    except Exception as e:
+        print(f"Error processing pin {index}: {str(e)}")
+        driver.save_screenshot(f"error_{index}.png")
 
 def switch_to_new_tab(timeout=10):
     print("Attempting to switch to new tab...")
