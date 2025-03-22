@@ -38,6 +38,9 @@ Running session:
 ---------------------------------------------------
 
 ---------------------------------------------------
-SSH:
-scp -i I:/proj/AWS/Scraper.pem ubuntu@18.194.233.107:/home/ubuntu/AWS-GOOGLE_MY_MAPS_SCRAPER/OUTPUT/*.csv I:/proj/AWS/AWS_output/
+SSH using gitBash:
+1) Navigate to folder with key-pair: cd KEY_PAIR_PARENT_FOLDER    example: cd /i/proj/AWS
+2) connect: ssh -i KEY_PAIR_NAME.pem ubuntu@IP   example: ssh -i Scraper.pem ubuntu@18.194.233.107
+3) exit: exit
+4) copy: scp -i KEY_PAIR_DIR/KEY_PAIR_NAME.pem ubuntu@IP:COPY_DIR PASTE_DIR    example: $ scp -r -i I:/proj/AWS/Scraper.pem ubuntu@18.194.233.107:/home/ubuntu/AWS-GOOGLE_MY_MAPS_SCRAPER/OUTPUT I:/proj/AWS/AWS_output/
 ---------------------------------------------------
