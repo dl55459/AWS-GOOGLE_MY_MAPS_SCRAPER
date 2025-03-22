@@ -52,7 +52,206 @@ options.add_experimental_option("useAutomationExtension", False)
 service = Service(executable_path="/usr/local/bin/chromedriver")
 driver = webdriver.Chrome(service=service, options=options)
 
-# Rest of your script...
+# Open the Google My Maps link
+url = "https://www.google.com/maps/d/viewer?mid=1UUfwmW5YntQiVznItYrXwHYn1D9eGkgU&femb=1&ll=5.008162640544454%2C-68.52131693613987&z=1"
+print("Navigating to URL...")
+driver.get(url)
+
+# Wait for the map to load
+wait = WebDriverWait(driver, 20)
+
+# Define all XPaths at the beginning for better visibility
+xpaths = {
+    # Parent folders and their subfolders
+    "parent_folders": {
+        "Ghost Towns": {
+            "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[2]/div/div',
+            "subfolders": {
+                "Archaeological Site": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[3]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[3]/div[2]/div',
+                    'pins': 95
+                },
+                "Dammed": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[4]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[4]/div[2]/div',
+                    'pins': 60
+                },
+                "Abandoned Due to Disaster": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[5]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[5]/div[2]/div',
+                    'pins': 29
+                },
+                "Unbuilt Developments": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[6]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[6]/div[2]/div',
+                    'pins': 16
+                },
+                "Ghost Towns": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[7]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[7]/div[2]/div',
+                    'pins': 1196
+                }
+            }
+        },
+        "Abandoned/Historic Places": {
+            "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[2]/div/div',
+            "subfolders": {
+                "Abandoned Buildings": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[3]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[3]/div[2]/div',
+                    'pins': 88
+                },
+                "Abandoned Military Property": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[4]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[4]/div[2]/div',
+                    'pins': 75
+                },
+                "Historical Marker": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[5]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[5]/div[2]/div',
+                    'pins': 64
+                },
+                "Abandoned Mine": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[6]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[6]/div[2]/div',
+                    'pins': 54
+                },
+                "Abandoned Place": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[7]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[7]/div[2]/div',
+                    'pins': 50
+                },
+                "Theme Park": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[8]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[8]/div[2]/div',
+                    'pins': 41
+                },
+                "Abandoned Industrial Plant": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[9]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[9]/div[2]/div',
+                    'pins': 35
+                },
+                "Memorial": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[10]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[10]/div[2]/div',
+                    'pins': 28
+                },
+                "Abandoned Bridge": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[11]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[11]/div[2]/div',
+                    'pins': 22
+                },
+                "Historical Site": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[12]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[12]/div[2]/div',
+                    'pins': 17
+                },
+                "Abandoned Power Plant": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[13]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[13]/div[2]/div',
+                    'pins': 11
+                },
+                "Abandoned Mine2": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[14]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[14]/div[2]/div',
+                    'pins': 2
+                },
+                "Abandoned Bridge (Demolished)": {
+                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[15]/div[1]/div/div[2]/div',
+                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[15]/div[2]/div',
+                    'pins': 1
+                }
+            }
+        }
+    },
+    # Name and description in the details panel
+    "name": '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div[1]/div[2]',
+    "description": '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div[2]/div[2]',
+
+    # Navigation button in the details panel
+    "navigation_button": '//*[@id="featurecardPanel"]/div/div/div[3]/div[3]/div',
+
+    # Back button to return to the main side panel
+    "back_button": '//*[@id="featurecardPanel"]/div/div/div[3]/div[1]/div'
+}
+
+# Global status tracking
+global_status = {
+    'total_pins_processed': 0,
+    'current_pin': None,
+    'current_folder': None,
+    'start_time': time.time(),
+    'success_rate': 0
+}
+
+def print_status():
+    elapsed = time.time() - global_status['start_time']
+    print(f"\n――――――――――――――――――――――――――――――――――――――――――――")
+    print(f"Current Folder: {global_status['current_folder']}")
+    print(f"Processing Pin: {global_status['current_pin']}")
+    print(f"Elapsed Time: {elapsed:.2f}s")
+    print(f"Success Rate: {global_status['success_rate']:.1%}")
+    print(f"Memory Usage: {psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024:.2f} MB")
+    print(f"――――――――――――――――――――――――――――――――――――――――――――\n")
+
+def switch_to_new_tab(timeout=10):
+    print("Attempting to switch to new tab...")
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if len(driver.window_handles) > 1:
+            driver.switch_to.window(driver.window_handles[1])
+            print("Successfully switched to new tab")
+            return True
+        time.sleep(0.5)
+    print("Failed to switch to new tab")
+    return False
+
+def ensure_element_visible(element):
+    try:
+        driver.execute_script("arguments[0].style.zIndex = '99999';", element)
+        driver.execute_script("arguments[0].style.position = 'relative';", element)
+    except Exception as e:
+        print(f"Visibility adjustment failed: {str(e)}")
+
+def safe_click(element, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+            ensure_element_visible(element)
+            time.sleep(1)
+            driver.execute_script("arguments[0].click();", element)
+            print(f"Successfully clicked element after {attempt + 1} attempts")
+            return True
+        except Exception as e:
+            print(f"Attempt {attempt + 1}: Error clicking element - {str(e)}")
+            time.sleep(2)
+    print("Max retries reached. Skipping this element.")
+    return False
+
+def extract_coordinates(url):
+    try:
+        if "dir//" in url:
+            coords_part = url.split("dir//")[1].split("&")[0]
+            lat, lon = coords_part.split(",")
+            print(f"Extracted coordinates - Lat: {lat}, Lon: {lon}")
+            return float(lat), float(lon)
+        print("No coordinates found in URL")
+        return None, None
+    except Exception as e:
+        print(f"Coordinate extraction error: {str(e)}")
+        return None, None
+
+def generate_filename(parent_folder, child_folder):
+    # Create OUTPUT directory if it doesn't exist
+    output_dir = os.path.join(os.getcwd(), "OUTPUT")
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Generate filename
+    parent = parent_folder.replace(" ", "_").replace("/", "_").lower()
+    child = child_folder.replace(" ", "_").replace("/", "_").lower()
+    return os.path.join(output_dir, f"{parent}_{child}.csv")
+
 
 try:
     # Start virtual display (required for headless on Linux)
