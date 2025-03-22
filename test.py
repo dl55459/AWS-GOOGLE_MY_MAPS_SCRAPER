@@ -261,7 +261,7 @@ def find_name_and_description_xpaths(driver):
             
             try:
                 if "name" in text:
-                    name_xpath = div.find_element(By.XPATH, f'./div[2]').get_attribute("outerHTML")
+                    name_xpath = driver.execute_script("return arguments[0].getAttribute('outerHTML');", div.find_element(By.XPATH, './div[2]'))
                 elif "description" in text:
                     description_xpath = div.find_element(By.XPATH, f'./div[2]').get_attribute("outerHTML")
             except Exception as e:
