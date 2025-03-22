@@ -259,6 +259,7 @@ try:
                         global_status['current_folder'] = f"{folder_name} > {subfolder_name}"
                         print_status()
 
+                        os.system('clear')  # Clear the console
                         print(f"\nProcessing pin {index} of {subfolder_data['pins']}")
                         location_xpath = f'{subfolder_data["location_base"]}[{index}]'
                         
