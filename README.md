@@ -19,3 +19,10 @@ Install all necesary dependencies:
 8) sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
 9) sudo apt install python3-venv -y
 10) sudo apt install python3-selenium
+11) sudo apt install tmux -y
+
+Running session:
+to start new session: tmux new -s session_name
+to detatch from session: CTRL+B, D
+to attach to session: tmux attach -t session_name
+to terminate a session: CTRL+C, and input text: exit
