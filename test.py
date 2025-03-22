@@ -164,16 +164,7 @@ xpaths = {
                 }
             }
         }
-    },
-    # Name and description in the details panel
-    "name": '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div[1]/div[2]',
-    "description": '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div[2]/div[2]',
-
-    # Navigation button in the details panel
-    "navigation_button": '//*[@id="featurecardPanel"]/div/div/div[3]/div[3]/div',
-
-    # Back button to return to the main side panel
-    "back_button": '//*[@id="featurecardPanel"]/div/div/div[3]/div[1]/div'
+    }
 }
 
 # Global status tracking
@@ -252,6 +243,46 @@ def generate_filename(parent_folder, child_folder):
     child = child_folder.replace(" ", "_").replace("/", "_").lower()
     return os.path.join(output_dir, f"{parent}_{child}.csv")
 
+def find_name_and_description(driver):
+    """
+    Dynamically find the name and description elements.
+    """
+    # Common patterns for name and description
+    name_candidates = [
+        '//div[contains(@class, "name")]',
+        '//div[contains(@class, "title")]',
+        '//div[contains(@class, "heading")]',
+        '//h1',
+        '//h2',
+        '//h3',
+    ]
+
+    description_candidates = [
+        '//div[contains(@class, "description")]',
+        '//div[contains(@class, "details")]',
+        '//div[contains(@class, "info")]',
+        '//p',
+    ]
+
+    # Try to find the name
+    name_element = None
+    for xpath in name_candidates:
+        try:
+            name_element = driver.find_element(By.XPATH, xpath)
+            break
+        except:
+            continue
+
+    # Try to find the description
+    description_element = None
+    for xpath in description_candidates:
+        try:
+            description_element = driver.find_element(By.XPATH, xpath)
+            break
+        except:
+            continue
+
+    return name_element, description_element
 
 try:
     # Start virtual display (required for headless on Linux)
@@ -283,8 +314,6 @@ try:
                         global_status['current_folder'] = f"{folder_name} > {subfolder_name}"
                         print_status()
 
-                        # Clear the console before printing the "Processing pin" message
-                        os.system('clear')
                         print(f"\nProcessing pin {index} of {subfolder_data['pins']}")
 
                         # Update the last processed pin
@@ -310,8 +339,11 @@ try:
                             continue
 
                         time.sleep(1)
-                        name = driver.find_element(By.XPATH, xpaths["name"]).text
-                        description = driver.find_element(By.XPATH, xpaths["description"]).text
+
+                        # Dynamically find name and description
+                        name_element, description_element = find_name_and_description(driver)
+                        name = name_element.text if name_element else "N/A"
+                        description = description_element.text if description_element else "N/A"
                         print(f"Retrieved name: {name}")
 
                         nav_button = driver.find_element(By.XPATH, xpaths["navigation_button"])
