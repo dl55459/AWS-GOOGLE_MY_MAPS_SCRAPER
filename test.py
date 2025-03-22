@@ -256,16 +256,17 @@ def find_name_and_description_xpaths(driver):
         name_xpath = "N/A"
         description_xpath = "N/A"
         
-        for i, div in enumerate(divs, start=1):
+        for div in divs:
             text = div.text.lower()
-            
             try:
                 if "name" in text:
-                    name_xpath = driver.execute_script("return arguments[0].getAttribute('outerHTML');", div.find_element(By.XPATH, './div[2]'))
+                    name_element = div.find_element(By.XPATH, './div[2]')
+                    name_xpath = name_element.text if name_element.text.strip() else name_element.get_attribute('href') or "N/A"
                 elif "description" in text:
-                    description_xpath = div.find_element(By.XPATH, f'./div[2]').get_attribute("outerHTML")
-            except Exception as e:
-                continue  # Skip if the div[2] does not exist
+                    description_element = div.find_element(By.XPATH, './div[2]')
+                    description_xpath = description_element.text if description_element.text.strip() else description_element.get_attribute('href') or "N/A"
+            except:
+                continue  # Skip if div[2] is missing
         
         return name_xpath, description_xpath
     except Exception as e:
