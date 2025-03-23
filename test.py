@@ -249,7 +249,7 @@ def generate_filename(parent_folder, child_folder):
     return os.path.join(output_dir, f"{parent}_{child}.csv")
 
 def find_name_and_description_xpaths(driver):
-    try:
+       try:
         divs = driver.find_elements(By.XPATH, '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div')
         name = "N/A"
         description = "N/A"
@@ -258,14 +258,19 @@ def find_name_and_description_xpaths(driver):
             try:
                 label = div.find_element(By.XPATH, './div[1]').text.lower()
                 value_element = div.find_element(By.XPATH, './div[2]')
-                value = value_element.text.strip() if value_element.text.strip() else value_element.get_attribute('href') or "N/A"
+                
+                if value_element:
+                    value = value_element.text.strip() if value_element.text.strip() else value_element.get_attribute('href') or "N/A"
+                else:
+                    value = "N/A"
                 
                 if "name" in label:
                     name = value
                 elif "description" in label:
                     description = value
-            except:
-                continue  # Skip if elements are missing
+            except Exception as e:
+                print(f"Skipping div due to error: {str(e)}")
+                continue  
         
         return name, description
     except Exception as e:
