@@ -249,7 +249,7 @@ def generate_filename(parent_folder, child_folder):
     return os.path.join(output_dir, f"{parent}_{child}.csv")
 
 def find_name_and_description_xpaths(driver):
-       try:
+    try:
         divs = driver.find_elements(By.XPATH, '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div')
         name = "N/A"
         description = "N/A"
