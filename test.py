@@ -248,29 +248,28 @@ def generate_filename(parent_folder, child_folder):
     child = child_folder.replace(" ", "_").replace("/", "_").lower()
     return os.path.join(output_dir, f"{parent}_{child}.csv")
 
-def find_name_and_description_xpaths(driver):
+def find_name_and_description(driver):
     try:
-        # Find all div elements in the featurecardPanel
         divs = driver.find_elements(By.XPATH, '//*[@id="featurecardPanel"]/div/div/div[4]/div[1]/div')
-        
-        name_xpath = "N/A"
-        description_xpath = "N/A"
-        
+        name = "N/A"
+        description = "N/A"
+
         for div in divs:
-            text = div.text.lower()
             try:
-                if "name" in text:
-                    name_element = div.find_element(By.XPATH, './div[2]')
-                    name_xpath = name_element.text if name_element.text.strip() else name_element.get_attribute('href') or "N/A"
-                elif "description" in text:
-                    description_element = div.find_element(By.XPATH, './div[2]')
-                    description_xpath = description_element.text if description_element.text.strip() else description_element.get_attribute('href') or "N/A"
+                label = div.find_element(By.XPATH, './div[1]').text.lower()
+                value_element = div.find_element(By.XPATH, './div[2]')
+                value = value_element.text.strip() if value_element.text.strip() else value_element.get_attribute('href') or "N/A"
+                
+                if "name" in label:
+                    name = value
+                elif "description" in label:
+                    description = value
             except:
-                continue  # Skip if div[2] is missing
+                continue  # Skip if elements are missing
         
-        return name_xpath, description_xpath
+        return name, description
     except Exception as e:
-        print(f"Error finding name and description XPaths: {str(e)}")
+        print(f"Error finding name and description: {str(e)}")
         return "N/A", "N/A"
 
 try:
