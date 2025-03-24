@@ -221,7 +221,7 @@ def process_folder(folder_name, folder_data):
     except Exception as e:
         log_message(f"⚠️ Critical error processing folder {folder_name}: {str(e)}")
 
-def process_location(parent_folder_data, child_folder_data=None, index=1, folder_path=""):
+ddef process_location(parent_folder_data, child_folder_data=None, index=1, folder_path=""):
     """
     Processes locations in either:
     - Parent folder's direct locations (when child_folder_data=None)
@@ -239,13 +239,13 @@ def process_location(parent_folder_data, child_folder_data=None, index=1, folder
         log_message(f"\n{'='*50}")
         log_message(f"🚀 PROCESSING LOCATION INDEX {index}")
         
-        # Get parent folder name safely
-        parent_name = parent_folder_data.get('name', 'Unknown Parent')
+        # Get parent folder name
+        parent_name = folder_path.split('/')[0] if folder_path else "Unknown"
         log_message(f"Parent: {parent_name}")
         
         if child_folder_data:
-            # Get child folder name safely
-            child_name = child_folder_data.get('name', 'Unknown Child')
+            # Get child folder name
+            child_name = folder_path.split('/')[1] if '/' in folder_path else "Unknown"
             log_message(f"Child: {child_name}")
             
         log_message(f"{'='*50}")
@@ -257,7 +257,7 @@ def process_location(parent_folder_data, child_folder_data=None, index=1, folder
                 (By.XPATH, parent_folder_data['closed'])))
             safe_click(parent_element)
             log_message("✅ Parent folder opened")
-            time.sleep(1.5)  # Increased wait time for folder to expand
+            time.sleep(1.5)
         except Exception as e:
             log_message(f"❌ Failed to open parent folder: {str(e)}")
             return False
@@ -269,10 +269,9 @@ def process_location(parent_folder_data, child_folder_data=None, index=1, folder
                     (By.XPATH, child_folder_data['xpath'])))
                 safe_click(child_element)
                 log_message("✅ Child folder opened")
-                time.sleep(1.5)  # Increased wait time for child folder to expand
+                time.sleep(1.5)
             except Exception as e:
                 log_message(f"❌ Failed to open child folder: {str(e)}")
-                # Try to close parent folder if child failed
                 try:
                     safe_click(parent_element)
                     log_message("↩️ Closed parent folder after child failure")
@@ -424,16 +423,24 @@ def process_folder(folder_name, folder_data):
                     
                     # Process locations in subfolder
                     for i in range(1, subfolder_data['pins'] + 1):
-                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i, 
-                                        f"{folder_name}/{subfolder_name}")
+                        process_location(
+                            parent_folder_data=folder_data,
+                            child_folder_data=subfolder_data,
+                            index=i,
+                            folder_path=f"{folder_name}/{subfolder_name}"
+                        )
                 
                 except Exception as e:
                     log_message(f"Error processing subfolder {subfolder_name}: {str(e)}")
         else:
             # Process locations directly in parent folder if no subfolders
-            if 'location_base' in folder_data:  # Check if parent has direct locations
+            if 'location_base' in folder_data:
                 for i in range(1, folder_data['pins'] + 1):
-                    process_location(folder_data['closed'], folder_data['location_base'], i, folder_name)
+                    process_location(
+                        parent_folder_data=folder_data,
+                        index=i,
+                        folder_path=folder_name
+                    )
                     
     except Exception as e:
         log_message(f"Error processing folder {folder_name}: {str(e)}")
