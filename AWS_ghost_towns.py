@@ -173,6 +173,20 @@ def safe_click(element, max_retries=3):
     log_message("Max retries reached. Skipping this element.")
     return False
 
+# Function to extract coordinates from the URL
+def extract_coordinates(url):
+    try:
+        if "dir//" in url:
+            # Extract the part of the URL between "dir//" and "&"
+            coords_part = url.split("dir//")[1].split("&")[0]
+            lat, lon = coords_part.split(",")
+            return float(lat), float(lon)
+        else:
+            return None, None
+    except Exception as e:
+        log_message(f"Error extracting coordinates from URL: {str(e)}")
+        return None, None
+
 # Function to extract name and description dynamically
 def extract_name_and_description():
     name = "N/A"
