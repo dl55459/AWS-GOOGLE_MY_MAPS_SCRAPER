@@ -41,32 +41,32 @@ xpaths = {
         "Italy": {
             'closed': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[2]/div/div',
             'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div',
-            'pins': 297+3
+            'pins': 297
         },
         "France": {
             'closed': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[2]/div/div',
             'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div',
-            'pins': 377+3
+            'pins': 377
         },
         "Spain": {
             'closed': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[3]/div/div[3]/div[2]/div/div',
             'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[3]/div/div[3]/div',
-            'pins': 157+3
+            'pins': 157
         },
         "Portugal": {
             'closed': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[4]/div/div[3]/div[2]/div/div',
             'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[4]/div/div[3]/div',
-            'pins': 130+3
+            'pins': 130
         },
         "Belgium": {
             'closed': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[5]/div/div[3]/div[2]/div/div',
             'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[5]/div/div[3]/div',
-            'pins': 95+3
+            'pins': 95
         },
         "Germany": {
             'closed': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div[2]/div/div',
             'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div',
-            'pins': 71+3
+            'pins': 71
         }
     },
     # Base XPath for the details panel
@@ -97,7 +97,7 @@ xpaths = {
 # }
 
 # Define possible strings for name and description labels
-possible_name_labels = ["name"]
+possible_name_labels = ["name", "nom"]
 possible_description_labels = ["description"]
 
 # Function to log messages
