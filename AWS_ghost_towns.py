@@ -160,7 +160,6 @@ def log_message(message):
     with open("log.txt", "a") as log_file:
         log_file.write(log_entry + "\n")
 
-# Function to safely click an element
 def safe_click(element, max_retries=3):
     for attempt in range(max_retries):
         try:
@@ -174,7 +173,6 @@ def safe_click(element, max_retries=3):
     log_message("Max retries reached. Skipping this element.")
     return False
 
-# Function to extract coordinates
 def extract_coordinates(url):
     try:
         if "dir//" in url:
@@ -186,7 +184,6 @@ def extract_coordinates(url):
         log_message(f"Error extracting coordinates: {str(e)}")
         return None, None
 
-# Function to extract name and description
 def extract_name_and_description():
     name = "N/A"
     description = "N/A"
@@ -206,39 +203,12 @@ def extract_name_and_description():
         log_message(f"Error extracting name/description: {str(e)}")
     return name, description
 
-def process_folder(folder_element, current_path=""):
-    """Recursively process a folder and its contents"""
+def process_location(location_xpath, location_base, index, folder_path=""):
+    """Process a single location with given XPaths"""
     try:
-        # Click to expand the folder
-        folder_header = folder_element.find_element(By.XPATH, ".//div[contains(@class, 'section-folder-header')]")
-        safe_click(folder_header)
-        time.sleep(1)
-        
-        folder_name = folder_header.text
-        full_path = f"{current_path}/{folder_name}" if current_path else folder_name
-        log_message(f"Processing folder: {full_path}")
-        
-        # Get all items in current folder
-        items = folder_element.find_elements(By.XPATH, "./following-sibling::div[contains(@class, 'section-content')]//div[contains(@class, 'section-item')]")
-        
-        for item in items:
-            try:
-                item_class = item.get_attribute("class")
-                if "section-folder" in item_class:
-                    process_folder(item, full_path)
-                elif "section-location" in item_class:
-                    process_location(item, full_path)
-            except Exception as e:
-                log_message(f"Error processing item: {str(e)}")
-                
-    except Exception as e:
-        log_message(f"Error processing folder: {str(e)}")
-
-def process_location(location_element, folder_path):
-    """Process a single location"""
-    try:
-        safe_click(location_element)
-        time.sleep(1)
+        location_element = wait.until(EC.element_to_be_clickable((By.XPATH, f'{location_base}[{index}]')))
+        if not safe_click(location_element):
+            return False
         
         name, description = extract_name_and_description()
         
@@ -253,19 +223,20 @@ def process_location(location_element, folder_path):
         driver.switch_to.window(driver.window_handles[0])
         
         # Save data
-        save_location_data(folder_path, name, description, lat, lon)
+        save_location_data(folder_path, name, description, lat, lon, index)
         
         # Go back
         back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
         safe_click(back_button)
         time.sleep(1)
+        return True
         
     except Exception as e:
-        log_message(f"Error processing location: {str(e)}")
+        log_message(f"Error processing location {index}: {str(e)}")
+        return False
 
-def save_location_data(folder_path, name, description, lat, lon):
+def save_location_data(folder_path, name, description, lat, lon, index):
     """Save location data to CSV"""
-    # Clean path for filename
     clean_path = folder_path.replace(" ", "_").replace("/", "_").lower()
     filename = f"{clean_path}.csv" if clean_path else "locations.csv"
     filepath = os.path.join(output_folder, filename)
@@ -275,7 +246,7 @@ def save_location_data(folder_path, name, description, lat, lon):
         "Description": description,
         "Latitude": lat,
         "Longitude": lon,
-        "Folder Path": folder_path
+        "Index": index
     }
     
     file_exists = os.path.exists(filepath)
@@ -285,23 +256,49 @@ def save_location_data(folder_path, name, description, lat, lon):
             writer.writeheader()
         writer.writerow(data)
 
+def process_folder(folder_name, folder_data):
+    """Process a parent folder with optional subfolders"""
+    try:
+        # Open parent folder
+        closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
+        safe_click(closed_folder)
+        log_message(f"Processing folder: {folder_name}")
+        time.sleep(1)
+        
+        # Check if there are subfolders
+        if "subfolders" in folder_data and folder_data["subfolders"]:
+            for subfolder_name, subfolder_data in folder_data["subfolders"].items():
+                try:
+                    # Open subfolder
+                    subfolder = wait.until(EC.element_to_be_clickable((By.XPATH, subfolder_data['xpath'])))
+                    safe_click(subfolder)
+                    log_message(f"Processing subfolder: {subfolder_name}")
+                    time.sleep(1)
+                    
+                    # Process locations in subfolder
+                    for i in range(1, subfolder_data['pins'] + 1):
+                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i, 
+                                        f"{folder_name}/{subfolder_name}")
+                
+                except Exception as e:
+                    log_message(f"Error processing subfolder {subfolder_name}: {str(e)}")
+        else:
+            # Process locations directly in parent folder if no subfolders
+            if 'location_base' in folder_data:  # Check if parent has direct locations
+                for i in range(1, folder_data['pins'] + 1):
+                    process_location(folder_data['closed'], folder_data['location_base'], i, folder_name)
+                    
+    except Exception as e:
+        log_message(f"Error processing folder {folder_name}: {str(e)}")
+
 # Main execution
 try:
     start_time = time.time()
     log_message("Script execution started.")
     
-    # Find all root elements
-    root_items = driver.find_elements(By.XPATH, "//div[contains(@class, 'section-item')]")
-    
-    for item in root_items:
-        try:
-            item_class = item.get_attribute("class")
-            if "section-folder" in item_class:
-                process_folder(item)
-            elif "section-location" in item_class:
-                process_location(item, "")
-        except Exception as e:
-            log_message(f"Error processing root item: {str(e)}")
+    # Process each parent folder
+    for folder_name, folder_data in xpaths["parent_folders"].items():
+        process_folder(folder_name, folder_data)
             
 except Exception as e:
     log_message(f"Error in main execution: {str(e)}")
