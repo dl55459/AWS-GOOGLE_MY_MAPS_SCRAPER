@@ -24,7 +24,8 @@ Install all necesary dependencies:
 8) sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
 9) sudo apt install python3-venv -y
 10) sudo apt install python3-selenium
-11) sudo apt install tmux -y
+11) sudo apt install psutil
+12) sudo apt install tmux -y
 ---------------------------------------------------
 
 ---------------------------------------------------
