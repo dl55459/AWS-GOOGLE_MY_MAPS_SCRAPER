@@ -238,9 +238,16 @@ def process_location(parent_folder_data, child_folder_data=None, index=1, folder
     try:
         log_message(f"\n{'='*50}")
         log_message(f"🚀 PROCESSING LOCATION INDEX {index}")
-        log_message(f"Parent: {parent_folder_data.get('name', list(xpaths['parent_folders'].keys())[0]}")
+        
+        # Get parent folder name safely
+        parent_name = parent_folder_data.get('name', 'Unknown Parent')
+        log_message(f"Parent: {parent_name}")
+        
         if child_folder_data:
-            log_message(f"Child: {child_folder_data.get('name', list(child_folder_data.keys())[0])}")
+            # Get child folder name safely
+            child_name = child_folder_data.get('name', 'Unknown Child')
+            log_message(f"Child: {child_name}")
+            
         log_message(f"{'='*50}")
         
         # ================= FOLDER HANDLING =================
@@ -374,6 +381,7 @@ def process_location(parent_folder_data, child_folder_data=None, index=1, folder
         except:
             log_message("🆘 FAILED to recover from critical error")
         return False
+        
 def save_location_data(folder_path, name, description, lat, lon, index):
     """Save location data to CSV"""
     clean_path = folder_path.replace(" ", "_").replace("/", "_").lower()
