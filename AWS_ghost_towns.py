@@ -147,6 +147,25 @@ xpaths = {
     "back_button": '//*[@id="featurecardPanel"]/div/div/div[3]/div[1]/div'
 }
 
+# some folder structure:
+# 1)
+# "Ghost Towns": {
+#     "closed": "//xpath/to/closed/folder",
+#     "location_base": "//xpath/to/locations",
+#     "pins": 100
+# }
+# 2)
+# "Abandoned Places": {
+#     "closed": "//xpath/to/parent/folder",
+#     "subfolders": {
+#         "Factories": {
+#             "xpath": "//xpath/to/subfolder",
+#             "location_base": "//xpath/to/locations",
+#             "pins": 50
+#         }
+#     }
+# }
+
 # Define possible strings for name and description labels
 possible_name_labels = ["name"]
 possible_description_labels = ["description"]
