@@ -221,15 +221,15 @@ def process_folder(folder_name, folder_data):
     except Exception as e:
         log_message(f"⚠️ Critical error processing folder {folder_name}: {str(e)}")
 
-def process_location(parent_folder, child_folder=None, index=1, folder_path=""):
+def process_location(parent_folder_data, child_folder_data=None, index=1, folder_path=""):
     """
     Processes locations in either:
-    - Parent folder's direct locations (when child_folder=None)
-    - Child folder's locations (when child_folder provided)
+    - Parent folder's direct locations (when child_folder_data=None)
+    - Child folder's locations (when child_folder_data provided)
     
     Args:
-        parent_folder: XPath or dict containing folder info
-        child_folder: XPath or dict for child folder (optional)
+        parent_folder_data: Dict containing parent folder info with 'closed' and optionally 'location_base'
+        child_folder_data: Dict containing child folder info with 'xpath' and 'location_base'
         index: Starting index for location elements
         folder_path: Output path for CSV files
     Returns:
@@ -238,40 +238,43 @@ def process_location(parent_folder, child_folder=None, index=1, folder_path=""):
     try:
         log_message(f"\n{'='*50}")
         log_message(f"🚀 PROCESSING LOCATION INDEX {index}")
-        log_message(f"Parent: {parent_folder.get('name', '') if isinstance(parent_folder, dict) else parent_folder}")
-        if child_folder:
-            log_message(f"Child: {child_folder.get('name', '') if isinstance(child_folder, dict) else child_folder}")
+        log_message(f"Parent: {parent_folder_data.get('name', list(xpaths['parent_folders'].keys())[0]}")
+        if child_folder_data:
+            log_message(f"Child: {child_folder_data.get('name', list(child_folder_data.keys())[0])}")
         log_message(f"{'='*50}")
         
         # ================= FOLDER HANDLING =================
-        # Handle parent folder (dict or direct XPath)
-        parent_xpath = parent_folder.get('closed') if isinstance(parent_folder, dict) else parent_folder
+        # Open parent folder
         try:
-            parent_element = wait.until(EC.element_to_be_clickable((By.XPATH, parent_xpath)))
+            parent_element = wait.until(EC.element_to_be_clickable(
+                (By.XPATH, parent_folder_data['closed'])))
             safe_click(parent_element)
             log_message("✅ Parent folder opened")
-            time.sleep(1)
+            time.sleep(1.5)  # Increased wait time for folder to expand
         except Exception as e:
             log_message(f"❌ Failed to open parent folder: {str(e)}")
             return False
 
-        # Handle child folder if provided (dict or direct XPath)
-        child_xpath = None
-        if child_folder:
-            child_xpath = child_folder.get('xpath') if isinstance(child_folder, dict) else child_folder
+        # Open child folder if provided
+        if child_folder_data:
             try:
-                child_element = wait.until(EC.element_to_be_clickable((By.XPATH, child_xpath)))
+                child_element = wait.until(EC.element_to_be_clickable(
+                    (By.XPATH, child_folder_data['xpath'])))
                 safe_click(child_element)
                 log_message("✅ Child folder opened")
-                time.sleep(1)
+                time.sleep(1.5)  # Increased wait time for child folder to expand
             except Exception as e:
                 log_message(f"❌ Failed to open child folder: {str(e)}")
+                # Try to close parent folder if child failed
+                try:
+                    safe_click(parent_element)
+                    log_message("↩️ Closed parent folder after child failure")
+                except:
+                    pass
                 return False
 
-        # ================= DYNAMIC LOCATION FINDING =================
-        location_base = (child_folder.get('location_base') if child_folder and isinstance(child_folder, dict)
-                      else parent_folder.get('location_base') if isinstance(parent_folder, dict)
-                      else None)
+        # ================= LOCATION PROCESSING =================
+        location_base = child_folder_data['location_base'] if child_folder_data else parent_folder_data.get('location_base')
         
         if not location_base:
             log_message("❌ No location_base found in folder structure")
@@ -287,7 +290,8 @@ def process_location(parent_folder, child_folder=None, index=1, folder_path=""):
             
             try:
                 log_message(f"🔍 Attempting location at div[{current_div}]")
-                location_element = wait.until(EC.element_to_be_clickable((By.XPATH, location_xpath)))
+                location_element = wait.until(EC.element_to_be_clickable(
+                    (By.XPATH, location_xpath)))
                 found_index = current_div
                 log_message(f"✅ Found location at div[{found_index}]")
                 break
@@ -304,21 +308,22 @@ def process_location(parent_folder, child_folder=None, index=1, folder_path=""):
             log_message("❌ Failed to click location element")
             return False
         log_message("🖱️ Location clicked successfully")
-        time.sleep(1)
+        time.sleep(1.5)  # Wait for details panel to load
 
         # ================= DATA EXTRACTION =================
         name, description = extract_name_and_description()
-        log_message(f"📋 Extracted: Name='{name}' | Desc={len(description)} chars")
+        log_message(f"📋 Extracted: Name='{name[:50]}...' | Desc={len(description)} chars")
 
         # ================= COORDINATES EXTRACTION =================
         lat, lon = None, None
         try:
-            nav_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["navigation_button"])))
+            nav_button = wait.until(EC.element_to_be_clickable(
+                (By.XPATH, xpaths["navigation_button"])))
             safe_click(nav_button)
             log_message("🌍 Opened navigation tab")
             
             driver.switch_to.window(driver.window_handles[1])
-            time.sleep(2)
+            time.sleep(2.5)  # Increased wait for maps to load
             current_url = driver.current_url
             lat, lon = extract_coordinates(current_url)
             log_message(f"📍 Coordinates: {lat}, {lon}")
@@ -327,34 +332,48 @@ def process_location(parent_folder, child_folder=None, index=1, folder_path=""):
             driver.switch_to.window(driver.window_handles[0])
         except Exception as e:
             log_message(f"⚠️ Coordinate extraction failed: {str(e)}")
+            try:
+                if len(driver.window_handles) > 1:
+                    driver.close()
+                    driver.switch_to.window(driver.window_handles[0])
+            except:
+                log_message("⚠️ Failed to recover window state")
 
         # ================= SAVE DATA =================
-        save_location_data(folder_path, name, description, lat, lon, found_index)
-        log_message("💾 Data saved successfully")
+        try:
+            save_location_data(folder_path, name, description, lat, lon, found_index)
+            log_message("💾 Data saved successfully")
+        except Exception as e:
+            log_message(f"❌ Failed to save data: {str(e)}")
+            return False
 
         # ================= CLEANUP =================
         try:
-            back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
+            back_button = wait.until(EC.element_to_be_clickable(
+                (By.XPATH, xpaths["back_button"])))
             safe_click(back_button)
             log_message("↩️ Returned to list view")
             time.sleep(1)
         except Exception as e:
             log_message(f"⚠️ Failed to return to list: {str(e)}")
+            return False
 
         return True
 
     except Exception as e:
         log_message(f"💥 CRITICAL ERROR: {str(e)}")
+        # Final recovery attempt
         try:
             if len(driver.window_handles) > 1:
                 driver.close()
                 driver.switch_to.window(driver.window_handles[0])
-            back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
+            back_button = wait.until(EC.element_to_be_clickable(
+                (By.XPATH, xpaths["back_button"])))
             safe_click(back_button)
+            log_message("🆘 Recovered from critical error")
         except:
-            log_message("🆘 FAILED to recover from error")
+            log_message("🆘 FAILED to recover from critical error")
         return False
-
 def save_location_data(folder_path, name, description, lat, lon, index):
     """Save location data to CSV"""
     clean_path = folder_path.replace(" ", "_").replace("/", "_").lower()
