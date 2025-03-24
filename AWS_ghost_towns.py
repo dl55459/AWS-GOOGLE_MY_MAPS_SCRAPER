@@ -210,121 +210,28 @@ def extract_coordinates(url):
 def extract_name_and_description():
     name = "N/A"
     description = "N/A"
-    
     try:
-        log_message("Starting name and description extraction...")
-        
-        # Wait for details panel to load
-        wait.until(EC.presence_of_element_located((By.XPATH, xpaths["details_panel"])))
-        panel = driver.find_element(By.XPATH, xpaths["details_panel"])
-        log_message(f"Details panel found. Panel text length: {len(panel.text)} characters")
-        
-        # NAME EXTRACTION
-        log_message("Attempting to extract name using possible labels...")
-        for label in possible_name_labels:
-            try:
-                # Try two different XPath patterns for the name
-                for i in range(1, 3):  # Try div[1] and div[2]
-                    xpath = f".//div[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{label.lower()}')]/following-sibling::div[{i}]"
-                    log_message(f"Trying name XPath: {xpath}")
-                    try:
-                        name_element = panel.find_element(By.XPATH, xpath)
-                        if name_element.text.strip():
-                            name = name_element.text
-                            log_message(f"✅ Name found via label '{label}' with XPath: {xpath}")
-                            break
-                    except:
-                        continue
-                if name != "N/A":
+        # Find all div elements at any level within the details panel
+        details_divs = driver.find_elements(By.XPATH, xpaths["details_panel"] + "//div")
+        log_message("Searching for name and description in details panel...")
+        for div in details_divs:
+            text = div.text
+            # Check for name labels
+            for label in possible_name_labels:
+                if label in text:
+                    log_message(f"Found '{label}' label.")
+                    name = div.find_element(By.XPATH, "./following-sibling::div[1]").text
+                    log_message(f"Extracted name: {name}")
                     break
-            except Exception as e:
-                log_message(f"⚠️ Error searching for name with label '{label}': {str(e)}")
-        
-        # If name not found with labels, try fallback methods
-        if name == "N/A":
-            log_message("⚠️ Name not found via labels, trying fallback methods...")
-            name_elements = panel.find_elements(By.XPATH, ".//h1 | .//h2 | .//h3 | .//h4")
-            if name_elements:
-                name = name_elements[0].text
-                log_message(f"✅ Name found via header element: '{name}'")
-            else:
-                all_divs = panel.find_elements(By.XPATH, ".//div[normalize-space()]")
-                log_message(f"Found {len(all_divs)} non-empty div elements")
-                
-                for i, div in enumerate(all_divs):
-                    if len(div.text) > 3:
-                        name = div.text
-                        log_message(f"✅ Name found via div #{i+1}: '{name}'")
-                        break
-        
-        # DESCRIPTION EXTRACTION
-        log_message("Attempting to extract description using possible labels...")
-        for label in possible_description_labels:
-            try:
-                # Try two different XPath patterns for the description
-                for i in range(1, 3):  # Try div[1] and div[2]
-                    xpath = f".//div[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{label.lower()}')]/following-sibling::div[{i}]"
-                    log_message(f"Trying description XPath: {xpath}")
-                    try:
-                        desc_element = panel.find_element(By.XPATH, xpath)
-                        if desc_element.text.strip():
-                            description = desc_element.text
-                            log_message(f"✅ Description found via label '{label}' with XPath: {xpath}")
-                            break
-                    except:
-                        continue
-                if description != "N/A":
+            # Check for description labels
+            for label in possible_description_labels:
+                if label in text:
+                    log_message(f"Found '{label}' label.")
+                    description = div.find_element(By.XPATH, "./following-sibling::div[1]").text
+                    log_message(f"Extracted description: {description}")
                     break
-            except Exception as e:
-                log_message(f"⚠️ Error searching for description with label '{label}': {str(e)}")
-        
-        # If description not found with labels, try fallback methods
-        if description == "N/A":
-            log_message("⚠️ Description not found via labels, trying fallback methods...")
-            if name != "N/A":
-                try:
-                    # Get elements following the name
-                    name_element = panel.find_element(By.XPATH, f".//*[contains(text(), '{name}')]")
-                    following_elements = driver.execute_script("""
-                        var nameEl = arguments[0];
-                        var all = [];
-                        var next = nameEl.nextElementSibling;
-                        while(next) {
-                            all.push(next);
-                            next = next.nextElementSibling;
-                        }
-                        return all;
-                    """, name_element)
-                    
-                    description_parts = []
-                    for i, el in enumerate(following_elements):
-                        if el.text.strip():
-                            description_parts.append(el.text)
-                            log_message(f"Description part #{i+1}: {el.text[:50]}...")
-                    
-                    if description_parts:
-                        description = "\n".join(description_parts)
-                        log_message(f"✅ Description assembled from {len(description_parts)} parts")
-                except Exception as e:
-                    log_message(f"⚠️ Error finding following elements: {str(e)}")
-            
-            # Final fallback
-            if description == "N/A":
-                all_divs = panel.find_elements(By.XPATH, ".//div[normalize-space()]")
-                candidate_divs = [div for div in all_divs if div.text != name and len(div.text) > 20]
-                
-                if candidate_divs:
-                    description = candidate_divs[0].text
-                    log_message(f"✅ Fallback description found: {description[:50]}...")
-                
     except Exception as e:
-        log_message(f"❌ Error in extract_name_and_description: {str(e)}")
-        try:
-            log_message(f"Current panel HTML: {driver.find_element(By.XPATH, xpaths['details_panel']).get_attribute('outerHTML')[:500]}...")
-        except:
-            log_message("Could not retrieve panel HTML")
-    
-    log_message(f"Final extraction results - Name: '{name}', Description length: {len(description)}")
+        log_message(f"Error extracting name or description: {str(e)}")
     return name, description
 
 def process_folder(folder_name, folder_data):
