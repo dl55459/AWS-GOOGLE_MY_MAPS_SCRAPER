@@ -151,181 +151,161 @@ xpaths = {
 possible_name_labels = ["name"]
 possible_description_labels = ["description"]
 
-# Function to log messages to both console and log.txt
+# Function to log messages
 def log_message(message):
-    # Get current memory usage
-    memory_usage = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024  # In MB
-    # Get current timestamp
+    memory_usage = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # Format the log message
     log_entry = f"[{timestamp}] [Memory: {memory_usage:.2f} MB] {message}"
-    print(log_entry)  # Print to console
+    print(log_entry)
     with open("log.txt", "a") as log_file:
-        log_file.write(log_entry + "\n")  # Write to log file
+        log_file.write(log_entry + "\n")
 
-# Function to safely click an element with retries
+# Function to safely click an element
 def safe_click(element, max_retries=3):
     for attempt in range(max_retries):
         try:
             driver.execute_script("arguments[0].scrollIntoView();", element)
-            time.sleep(1)  # Wait for the element to be in view
+            time.sleep(1)
             element.click()
             return True
         except Exception as e:
             log_message(f"Attempt {attempt + 1}: Error clicking element - {str(e)}")
-            time.sleep(2)  # Wait before retrying
+            time.sleep(2)
     log_message("Max retries reached. Skipping this element.")
     return False
 
-# Function to extract coordinates from the URL
+# Function to extract coordinates
 def extract_coordinates(url):
     try:
         if "dir//" in url:
-            # Extract the part of the URL between "dir//" and "&"
             coords_part = url.split("dir//")[1].split("&")[0]
             lat, lon = coords_part.split(",")
             return float(lat), float(lon)
-        else:
-            return None, None
+        return None, None
     except Exception as e:
-        log_message(f"Error extracting coordinates from URL: {str(e)}")
+        log_message(f"Error extracting coordinates: {str(e)}")
         return None, None
 
-# Function to generate a valid filename
-def generate_filename(parent_folder, child_folder):
-    # Replace spaces and special characters with underscores
-    parent_folder = parent_folder.replace(" ", "_").replace("/", "_").lower()
-    child_folder = child_folder.replace(" ", "_").replace("/", "_").lower()
-    return os.path.join(output_folder, f"{parent_folder}_{child_folder}.csv")
-
-# Function to extract name and description dynamically
+# Function to extract name and description
 def extract_name_and_description():
     name = "N/A"
     description = "N/A"
     try:
-        # Find all div elements at any level within the details panel
         details_divs = driver.find_elements(By.XPATH, xpaths["details_panel"] + "//div")
-        log_message("Searching for name and description in details panel...")
         for div in details_divs:
-            text = div.text
-            # Check for name labels
+            text = div.text.lower()
             for label in possible_name_labels:
                 if label in text:
-                    log_message(f"Found '{label}' label.")
                     name = div.find_element(By.XPATH, "./following-sibling::div[1]").text
-                    log_message(f"Extracted name: {name}")
                     break
-            # Check for description labels
             for label in possible_description_labels:
                 if label in text:
-                    log_message(f"Found '{label}' label.")
                     description = div.find_element(By.XPATH, "./following-sibling::div[1]").text
-                    log_message(f"Extracted description: {description}")
                     break
     except Exception as e:
-        log_message(f"Error extracting name or description: {str(e)}")
+        log_message(f"Error extracting name/description: {str(e)}")
     return name, description
 
-# Extract data from all parent folders and their subfolders
-try:
-    start_time = time.time()  # Start timer for execution time
-    log_message("Script execution started.")
-
-    # Loop through each parent folder
-    for folder_name, folder_data in xpaths["parent_folders"].items():
-        log_message(f"Processing parent folder: {folder_name}")
-
-        # Locate and expand the parent folder
-        closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
-        safe_click(closed_folder)
-        log_message(f"Expanded parent folder: {folder_name}")
-        time.sleep(1)  # Wait for the folder to expand
-
-        # Loop through each subfolder in the parent folder
-        for subfolder_name, subfolder_data in folder_data["subfolders"].items():
+def process_folder(folder_element, current_path=""):
+    """Recursively process a folder and its contents"""
+    try:
+        # Click to expand the folder
+        folder_header = folder_element.find_element(By.XPATH, ".//div[contains(@class, 'section-folder-header')]")
+        safe_click(folder_header)
+        time.sleep(1)
+        
+        folder_name = folder_header.text
+        full_path = f"{current_path}/{folder_name}" if current_path else folder_name
+        log_message(f"Processing folder: {full_path}")
+        
+        # Get all items in current folder
+        items = folder_element.find_elements(By.XPATH, "./following-sibling::div[contains(@class, 'section-content')]//div[contains(@class, 'section-item')]")
+        
+        for item in items:
             try:
-                log_message(f"Processing subfolder: {subfolder_name}")
-
-                # Locate and click the subfolder
-                subfolder = wait.until(EC.element_to_be_clickable((By.XPATH, subfolder_data['xpath'])))
-                safe_click(subfolder)
-                log_message(f"Clicked subfolder: {subfolder_name}")
-                time.sleep(1)  # Wait for the subfolder to load
-
-                # Initialize a list to store pins for this subfolder
-                pins = []
-
-                # Loop through all location elements in the subfolder
-                for index in range(1, subfolder_data['pins'] + 1):  # Loop from 1 to number of pins
-                    try:
-                        # Generate the XPath for the current location element
-                        location_xpath = f'{subfolder_data["location_base"]}[{index}]'
-                        log_message(f"Processing location {index} with XPath: {location_xpath}")
-
-                        # Locate the location element
-                        location = wait.until(EC.element_to_be_clickable((By.XPATH, location_xpath)))
-                        if not safe_click(location):
-                            log_message(f"Skipping location {index} due to click failure")
-                            continue
-                        log_message(f"Clicked location {index}")
-                        time.sleep(1)  # Wait for the details panel to load
-
-                        # Extract name and description dynamically
-                        name, description = extract_name_and_description()
-
-                        # Click the navigation button to get coordinates
-                        nav_button = driver.find_element(By.XPATH, xpaths["navigation_button"])
-                        safe_click(nav_button)
-                        log_message("Clicked navigation button")
-
-                        # Switch to the new tab
-                        driver.switch_to.window(driver.window_handles[1])
-                        time.sleep(2)  # Wait for the tab to load
-
-                        # Extract coordinates from the URL
-                        current_url = driver.current_url
-                        lat, lon = extract_coordinates(current_url)
-                        log_message(f"Extracted coordinates: {lat}, {lon}")
-
-                        # Save the data
-                        pins.append({
-                            "Name": name,
-                            "Description": description,
-                            "Latitude": lat,
-                            "Longitude": lon,
-                            "Index": index
-                        })
-
-                        # Close the new tab and switch back to the main tab
-                        driver.close()
-                        driver.switch_to.window(driver.window_handles[0])
-                        time.sleep(1)
-
-                        # Click the back button to return to the main side panel
-                        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
-                        safe_click(back_button)
-                        log_message("Clicked back button")
-                        time.sleep(1)  # Wait for the side panel to reload
-                    except Exception as e:
-                        log_message(f"Error extracting location data in {subfolder_name} (index {index}): {str(e)}")
-
-                # Save the data for this subfolder to a CSV file
-                filename = generate_filename(folder_name, subfolder_name)
-                with open(filename, "w", newline="", encoding="utf-8") as file:
-                    writer = csv.DictWriter(file, fieldnames=["Name", "Description", "Latitude", "Longitude", "Index"])
-                    writer.writeheader()
-                    writer.writerows(pins)
-
-                log_message(f"Data saved to {filename}")
+                item_class = item.get_attribute("class")
+                if "section-folder" in item_class:
+                    process_folder(item, full_path)
+                elif "section-location" in item_class:
+                    process_location(item, full_path)
             except Exception as e:
-                log_message(f"Error accessing subfolder {subfolder_name}: {str(e)}")
-except Exception as e:
-    log_message(f"Error accessing parent folder or subfolder: {str(e)}")
-finally:
-    # Close the browser
-    driver.quit()
-    log_message("Browser closed.")
+                log_message(f"Error processing item: {str(e)}")
+                
+    except Exception as e:
+        log_message(f"Error processing folder: {str(e)}")
 
-    # Log total execution time
+def process_location(location_element, folder_path):
+    """Process a single location"""
+    try:
+        safe_click(location_element)
+        time.sleep(1)
+        
+        name, description = extract_name_and_description()
+        
+        # Get coordinates
+        nav_button = driver.find_element(By.XPATH, xpaths["navigation_button"])
+        safe_click(nav_button)
+        driver.switch_to.window(driver.window_handles[1])
+        time.sleep(2)
+        current_url = driver.current_url
+        lat, lon = extract_coordinates(current_url)
+        driver.close()
+        driver.switch_to.window(driver.window_handles[0])
+        
+        # Save data
+        save_location_data(folder_path, name, description, lat, lon)
+        
+        # Go back
+        back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
+        safe_click(back_button)
+        time.sleep(1)
+        
+    except Exception as e:
+        log_message(f"Error processing location: {str(e)}")
+
+def save_location_data(folder_path, name, description, lat, lon):
+    """Save location data to CSV"""
+    # Clean path for filename
+    clean_path = folder_path.replace(" ", "_").replace("/", "_").lower()
+    filename = f"{clean_path}.csv" if clean_path else "locations.csv"
+    filepath = os.path.join(output_folder, filename)
+    
+    data = {
+        "Name": name,
+        "Description": description,
+        "Latitude": lat,
+        "Longitude": lon,
+        "Folder Path": folder_path
+    }
+    
+    file_exists = os.path.exists(filepath)
+    with open(filepath, "a", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=data.keys())
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(data)
+
+# Main execution
+try:
+    start_time = time.time()
+    log_message("Script execution started.")
+    
+    # Find all root elements
+    root_items = driver.find_elements(By.XPATH, "//div[contains(@class, 'section-item')]")
+    
+    for item in root_items:
+        try:
+            item_class = item.get_attribute("class")
+            if "section-folder" in item_class:
+                process_folder(item)
+            elif "section-location" in item_class:
+                process_location(item, "")
+        except Exception as e:
+            log_message(f"Error processing root item: {str(e)}")
+            
+except Exception as e:
+    log_message(f"Error in main execution: {str(e)}")
+finally:
+    driver.quit()
     execution_time = time.time() - start_time
-    log_message(f"Script execution completed in {execution_time:.2f} seconds.")
+    log_message(f"Script completed in {execution_time:.2f} seconds.")
