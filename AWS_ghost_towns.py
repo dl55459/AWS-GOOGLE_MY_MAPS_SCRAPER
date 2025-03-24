@@ -173,16 +173,33 @@ def safe_click(element, max_retries=3):
     log_message("Max retries reached. Skipping this element.")
     return False
 
-def extract_coordinates(url):
+# Function to extract name and description dynamically
+def extract_name_and_description():
+    name = "N/A"
+    description = "N/A"
     try:
-        if "dir//" in url:
-            coords_part = url.split("dir//")[1].split("&")[0]
-            lat, lon = coords_part.split(",")
-            return float(lat), float(lon)
-        return None, None
+        # Find all div elements at any level within the details panel
+        details_divs = driver.find_elements(By.XPATH, xpaths["details_panel"] + "//div")
+        log_message("Searching for name and description in details panel...")
+        for div in details_divs:
+            text = div.text
+            # Check for name labels
+            for label in possible_name_labels:
+                if label in text:
+                    log_message(f"Found '{label}' label.")
+                    name = div.find_element(By.XPATH, "./following-sibling::div[1]").text
+                    log_message(f"Extracted name: {name}")
+                    break
+            # Check for description labels
+            for label in possible_description_labels:
+                if label in text:
+                    log_message(f"Found '{label}' label.")
+                    description = div.find_element(By.XPATH, "./following-sibling::div[1]").text
+                    log_message(f"Extracted description: {description}")
+                    break
     except Exception as e:
-        log_message(f"Error extracting coordinates: {str(e)}")
-        return None, None
+        log_message(f"Error extracting name or description: {str(e)}")
+    return name, description
 
 def process_folder(folder_name, folder_data):
     """Process a parent folder with optional subfolders"""
