@@ -210,28 +210,64 @@ def extract_coordinates(url):
 def extract_name_and_description():
     name = "N/A"
     description = "N/A"
+    
     try:
-        # Find all div elements at any level within the details panel
-        details_divs = driver.find_elements(By.XPATH, xpaths["details_panel"] + "//div")
-        log_message("Searching for name and description in details panel...")
-        for div in details_divs:
-            text = div.text
-            # Check for name labels
-            for label in possible_name_labels:
-                if label in text:
-                    log_message(f"Found '{label}' label.")
-                    name = div.find_element(By.XPATH, "./following-sibling::div[1]").text
-                    log_message(f"Extracted name: {name}")
-                    break
-            # Check for description labels
-            for label in possible_description_labels:
-                if label in text:
-                    log_message(f"Found '{label}' label.")
-                    description = div.find_element(By.XPATH, "./following-sibling::div[1]").text
-                    log_message(f"Extracted description: {description}")
-                    break
+        # Wait for details panel to load
+        wait.until(EC.presence_of_element_located((By.XPATH, xpaths["details_panel"])))
+        
+        # Get the entire details panel text first
+        panel = driver.find_element(By.XPATH, xpaths["details_panel"])
+        panel_text = panel.text
+        
+        # Try multiple strategies to extract name
+        try:
+            # Strategy 1: Look for header elements
+            name_elements = panel.find_elements(By.XPATH, ".//h1 | .//h2 | .//h3 | .//h4")
+            if name_elements:
+                name = name_elements[0].text
+                log_message(f"Found name via header: {name}")
+            else:
+                # Strategy 2: First non-empty div with substantial text
+                all_divs = panel.find_elements(By.XPATH, ".//div[normalize-space()]")
+                for div in all_divs:
+                    if len(div.text) > 3:  # Minimum reasonable length for a name
+                        name = div.text
+                        log_message(f"Found name via first substantial div: {name}")
+                        break
+        except Exception as e:
+            log_message(f"Error extracting name: {str(e)}")
+        
+        # Try multiple strategies to extract description
+        try:
+            # Strategy 1: Look for paragraphs after the name
+            if name != "N/A":
+                # Find all elements that come after the name element
+                following_elements = driver.execute_script("""
+                    var nameEl = arguments[0];
+                    var all = [];
+                    var next = nameEl.nextElementSibling;
+                    while(next) {
+                        all.push(next);
+                        next = next.nextElementSibling;
+                    }
+                    return all;
+                """, name_elements[0] if name_elements else all_divs[0])
+                
+                description = "\n".join([el.text for el in following_elements if el.text.strip()])
+            
+            # Strategy 2: Look for divs with longer text that aren't the name
+            if description == "N/A":
+                all_divs = panel.find_elements(By.XPATH, ".//div[normalize-space()]")
+                candidate_divs = [div for div in all_divs if div.text != name and len(div.text) > 20]
+                if candidate_divs:
+                    description = candidate_divs[0].text
+                    log_message(f"Found description via long div: {description}")
+        except Exception as e:
+            log_message(f"Error extracting description: {str(e)}")
+            
     except Exception as e:
-        log_message(f"Error extracting name or description: {str(e)}")
+        log_message(f"Error in details panel processing: {str(e)}")
+    
     return name, description
 
 def process_folder(folder_name, folder_data):
@@ -292,45 +328,51 @@ def process_folder(folder_name, folder_data):
         log_message(f"⚠️ Critical error processing folder {folder_name}: {str(e)}")
 
 def process_location(location_xpath, location_base, index, folder_path=""):
-    """Process a single location with given XPaths"""
     try:
-        log_message(f"        Opening location {index}...")
-        location_element = wait.until(EC.element_to_be_clickable((By.XPATH, f'{location_base}[{index}]')))
+        log_message(f"Processing location {index}")
         
-        if not safe_click(location_element):
-            log_message(f"        ⚠️ Failed to click location {index}")
+        # Click the location
+        location = wait.until(EC.element_to_be_clickable((By.XPATH, f'{location_base}[{index}]')))
+        if not safe_click(location):
             return False
         
-        log_message("        Extracting name and description...")
+        # Wait for details panel
+        if not wait_for_details_panel():
+            return False
+        
+        # Extract data
         name, description = extract_name_and_description()
         
-        log_message("        Getting coordinates...")
-        nav_button = driver.find_element(By.XPATH, xpaths["navigation_button"])
+        # Get coordinates
+        nav_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["navigation_button"])))
         safe_click(nav_button)
+        
+        # Switch to new tab
         driver.switch_to.window(driver.window_handles[1])
-        time.sleep(2)
+        time.sleep(2)  # Consider using explicit wait here
         current_url = driver.current_url
         lat, lon = extract_coordinates(current_url)
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
         
-        log_message("        Saving location data...")
+        # Save data
         save_location_data(folder_path, name, description, lat, lon, index)
         
-        log_message("        Returning to main view...")
+        # Return to list view
         back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
         safe_click(back_button)
-        time.sleep(1)
         
-        log_message(f"        ✔ Successfully processed location {index}")
         return True
         
     except Exception as e:
-        log_message(f"        ⚠️ Error processing location {index}: {str(e)}")
-        return False
-        
-    except Exception as e:
         log_message(f"Error processing location {index}: {str(e)}")
+        # Try to recover by going back
+        try:
+            driver.switch_to.window(driver.window_handles[0])
+            back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
+            safe_click(back_button)
+        except:
+            pass
         return False
 
 def save_location_data(folder_path, name, description, lat, lon, index):
