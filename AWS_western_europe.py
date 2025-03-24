@@ -221,7 +221,7 @@ def process_folder(folder_name, folder_data):
     except Exception as e:
         log_message(f"⚠️ Critical error processing folder {folder_name}: {str(e)}")
 
-ddef process_location(parent_folder_data, child_folder_data=None, index=1, folder_path=""):
+def process_location(parent_folder_data, child_folder_data=None, index=1, folder_path=""):
     """
     Processes locations in either:
     - Parent folder's direct locations (when child_folder_data=None)
