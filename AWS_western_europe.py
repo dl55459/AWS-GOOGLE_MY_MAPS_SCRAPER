@@ -221,119 +221,22 @@ def process_folder(folder_name, folder_data):
     except Exception as e:
         log_message(f"⚠️ Critical error processing folder {folder_name}: {str(e)}")
 
-def process_location(location_base, folder_path=""):
-    """
-    Processes locations by trying div[1] through div[5] sequentially
-    Args:
-        location_base: Base XPath without the final div index
-        folder_path: Folder structure for CSV organization
-    Returns:
-        bool: True if any location was processed successfully, False if all attempts failed
-    """
-    success_flag = False
-    
-    for div_index in range(1, 6):  # Try div[1] through div[5]
-        try:
-            log_message(f"\n{'='*50}")
-            log_message(f"🔍 ATTEMPTING DIV[{div_index}] LOCATION PROCESSING")
-            log_message(f"{'='*50}")
-            
-            # ================= LOCATION ELEMENT FINDING =================
-            location_xpath = f"{location_base}/div[{div_index}]"
-            log_message(f"XPath being tried: {location_xpath}")
-            
-            try:
-                location_element = wait.until(
-                    EC.element_to_be_clickable((By.XPATH, location_xpath)))
-                log_message(f"✅ Found clickable element at div[{div_index}]")
-            except Exception as e:
-                log_message(f"⚠️ No clickable element at div[{div_index}]: {str(e)}")
-                continue
-
-            # ================= CLICK LOCATION =================
-            try:
-                if not safe_click(location_element):
-                    log_message(f"❌ Failed to click div[{div_index}] element")
-                    continue
-                log_message("🖱️ Successfully clicked location")
-                time.sleep(1)  # Wait for details panel
-            except Exception as e:
-                log_message(f"⚠️ Click failed: {str(e)}")
-                continue
-
-            # ================= DETAILS PANEL HANDLING =================
-            try:
-                wait.until(EC.visibility_of_element_located(
-                    (By.XPATH, xpaths["details_panel"])))
-                log_message("📋 Details panel visible")
-            except Exception as e:
-                log_message(f"❌ Details panel not visible: {str(e)}")
-                try:
-                    back_button = wait.until(EC.element_to_be_clickable(
-                        (By.XPATH, xpaths["back_button"])))
-                    safe_click(back_button)
-                    log_message("↩️ Returned to list view")
-                except Exception as e:
-                    log_message(f"⚠️ Failed to return to list view: {str(e)}")
-                continue
-
-            # ================= DATA EXTRACTION =================
-            try:
-                name, description = extract_name_and_description()
-                log_message(f"📝 Extracted: Name='{name[:20]}...' | Desc={len(description)} chars")
-            except Exception as e:
-                log_message(f"⚠️ Data extraction failed: {str(e)}")
-                name, description = "N/A", "N/A"
-
-            # ================= COORDINATE EXTRACTION =================
-            lat, lon = None, None
-            try:
-                nav_button = wait.until(EC.element_to_be_clickable(
-                    (By.XPATH, xpaths["navigation_button"])))
-                safe_click(nav_button)
-                log_message("🌐 Opened navigation tab")
-                
-                driver.switch_to.window(driver.window_handles[1])
-                time.sleep(2)
-                current_url = driver.current_url
-                lat, lon = extract_coordinates(current_url)
-                log_message(f"📍 Got coordinates: {lat}, {lon}")
-                
-                driver.close()
-                driver.switch_to.window(driver.window_handles[0])
-            except Exception as e:
-                log_message(f"⚠️ Coordinate extraction failed: {str(e)}")
-                try:
-                    if len(driver.window_handles) > 1:
-                        driver.close()
-                        driver.switch_to.window(driver.window_handles[0])
-                except Exception as e:
-                    log_message(f"⚠️ Window handling failed: {str(e)}")
-
-            # ================= DATA SAVING =================
-            try:
-                save_location_data(folder_path, name, description, lat, lon, div_index)
-                log_message("💾 Saved location data")
-                success_flag = True
-            except Exception as e:
-                log_message(f"⚠️ Failed to save data: {str(e)}")
-
-            # ================= RETURN TO LIST =================
-            try:
-                back_button = wait.until(EC.element_to_be_clickable(
-                    (By.XPATH, xpaths["back_button"])))
-                safe_click(back_button)
-                log_message("↩️ Successfully returned to list")
-                time.sleep(0.5)
-            except Exception as e:
-                log_message(f"⚠️ Failed to return to list: {str(e)}")
-                break  # Exit loop if we can't return to list
-
-        except Exception as e:
-            log_message(f"💥 Unexpected error processing div[{div_index}]: {str(e)}")
-            continue
-
-    return success_flag
+xpaths = {
+    "parent_folders": {
+        "Europe": {
+            "closed": '//xpath/to/europe/folder',
+            "subfolders": {
+                "Italy": {
+                    'xpath': '//xpath/to/italy/subfolder',
+                    'location_base': '//xpath/to/locations',
+                    'pins': 50
+                },
+                # Other countries...
+            }
+        }
+    },
+    # Other xpaths...
+}
 
 def save_location_data(folder_path, name, description, lat, lon, index):
     """Save location data to CSV"""
