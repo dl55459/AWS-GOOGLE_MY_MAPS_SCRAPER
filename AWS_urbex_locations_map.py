@@ -28,7 +28,7 @@ service = Service(driver_path)
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 # Open the Google My Maps link
-url = "https://www.google.com/maps/d/viewer?mid=1fuQBYYfSXBobyFtPknOOc9utCArEExk&g_ep=CAISEjI1LjExLjMuNzM1NDg4OTYwMBgAIN1iKnUsOTQyNTk1NTEsOTQyNDI1NTYsOTQyMjQ4MjUsOTQyMjcyNDcsOTQyMjcyNDgsOTQyMzExODgsNDcwNzE3MDQsNDcwNjk1MDgsOTQyMTg2NDEsOTQyMDMwMTksNDcwODQzMDQsOTQyMDg0NTgsOTQyMDg0NDdCAlNL&g_st=ic&ll=40.80064599999999%2C-73.89863700000001&z=8"
+url = "https://www.google.com/maps/d/viewer?mid=1fuQBYYfSXBobyFtPknOOc9utCArEExk&g_ep=CAISEjI1LjExLjMuNzM1NDg4OTYwMBgAIN1iKnUsOTQyNTk1NTEsOTQyNDI1NTYsOTQyMjQ4MjUsOTQyMjcyNDcsOTQyMjcyNDgsOTQyMzExODgsNDcwNzE3MDQsNDcwNjk1MDgsOTQyMTg2NDEsOTQyMDMwMTksNDcwODQzMDQsOTQyMDg0NTgsOTQyMDg0NDdCAlNL&g_st=ic&ll=37.116651%2C-111.915733&z=8"
 driver.get(url)
 
 # Wait for the map to load
@@ -156,6 +156,7 @@ xpaths = {
 #     }
 # }
 
+# Define possible strings for name and description labels
 # Define possible strings for name and description labels
 possible_name_labels = ["name"]
 possible_description_labels = ["description"]
