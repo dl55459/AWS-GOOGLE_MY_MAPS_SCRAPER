@@ -23,9 +23,9 @@ chrome_options.add_argument("--no-sandbox")  # Disable sandboxing
 chrome_options.add_argument("--disable-dev-shm-usage")  # Disable shared memory usage
 
 # Set the path to ChromeDriver (installed in /usr/local/bin/chromedriver)
-driver_path = "I:/proj/chromedriver-win64/chromedriver-win64/chromedriver.exe"  # Replace with your path
+driver_path = "/usr/local/bin/chromedriver"
 service = Service(driver_path)
-driver = webdriver.Chrome(service=service, options=chrome_options)  # Pass options to WebDriver
+driver = webdriver.Chrome(service=service, options=chrome_options)
 
 # Open the Google My Maps link
 url = "https://www.google.com/maps/d/viewer?mid=1fmO--HHRTuMMOgyRoXvK7prcGkpeiRE&hl=en&femb=1&ll=43.68706338340388%2C10.128599688444908&z=4"
