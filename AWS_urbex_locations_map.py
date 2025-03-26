@@ -38,56 +38,56 @@ wait = WebDriverWait(driver, 20)
 xpaths = {
     # Parent folders and their subfolders
     "parent_folders": {
-        "Military Properties": {
-            "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[2]/div/div',
-            "subfolders": {
-                "All": {
-                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[3]/div[1]/div/div[2]/div',
-                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[3]/div[2]/div',
-                    'pins': 79
-                },
-            }
-        },
-        "Archaeological Sites": {
-            "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[2]/div/div',
-            "subfolders": {
-                "All": {
-                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[3]/div[1]/div/div[2]/div',
-                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[3]/div[2]/div',
-                    'pins': 92
-                },
-            }
-        },
-        "Abandoned Theme Parks": {
-            "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[3]/div/div[3]/div[2]/div/div',
-            "subfolders": {
-                "All": {
-                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[3]/div/div[3]/div[3]/div[1]/div/div[2]/div',
-                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[3]/div/div[3]/div[3]/div[2]/div',
-                    'pins': 40
-                },
-            }
-        },
-        "abandoned power plants/ abandoned bridges": {
-            "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[4]/div/div[3]/div[2]/div/div',
-            "subfolders": {
-                "All": {
-                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[4]/div/div[3]/div[3]/div[1]/div/div[2]/div',
-                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[4]/div/div[3]/div[3]/div[2]/div',
-                    'pins': 23
-                },
-            }
-        },
-        "Abandoned locations1": {
-            "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[5]/div/div[3]/div[2]/div/div',
-            "subfolders": {
-                "All": {
-                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[5]/div/div[3]/div[3]/div[1]/div/div[2]/div',
-                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[5]/div/div[3]/div[3]/div[2]/div',
-                    'pins': 2254
-                },
-            }
-        },
+    #    "Military Properties": {
+    #        "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[2]/div/div',
+    #        "subfolders": {
+    #            "All": {
+    #                'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[3]/div[1]/div/div[2]/div',
+    #                'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[1]/div/div[3]/div[3]/div[2]/div',
+    #                'pins': 79
+    #            },
+    #        }
+    #    },
+    #    "Archaeological Sites": {
+    #        "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[2]/div/div',
+    #        "subfolders": {
+    #            "All": {
+    #                'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[3]/div[1]/div/div[2]/div',
+    #                'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[2]/div/div[3]/div[3]/div[2]/div',
+    #                'pins': 92
+    #            },
+    #        }
+    #    },
+    #    "Abandoned Theme Parks": {
+    #        "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[3]/div/div[3]/div[2]/div/div',
+    #        "subfolders": {
+    #            "All": {
+    #                'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[3]/div/div[3]/div[3]/div[1]/div/div[2]/div',
+    #                'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[3]/div/div[3]/div[3]/div[2]/div',
+    #                'pins': 40
+    #            },
+    #        }
+    #    },
+    #    "abandoned power plants/ abandoned bridges": {
+    #        "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[4]/div/div[3]/div[2]/div/div',
+    #        "subfolders": {
+    #            "All": {
+    #                'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[4]/div/div[3]/div[3]/div[1]/div/div[2]/div',
+    #                'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[4]/div/div[3]/div[3]/div[2]/div',
+    #                'pins': 23
+    #            },
+    #        }
+    #    },
+    #    "Abandoned locations1": {
+    #        "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[5]/div/div[3]/div[2]/div/div',
+    #        "subfolders": {
+    #            "All": {
+    #                'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[5]/div/div[3]/div[3]/div[1]/div/div[2]/div',
+    #                'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[5]/div/div[3]/div[3]/div[2]/div',
+    #                'pins': 2254
+    #            },
+    #        }
+    #    },
         "Abandoned Locations2": {
             "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div[2]/div/div',
             "subfolders": {
