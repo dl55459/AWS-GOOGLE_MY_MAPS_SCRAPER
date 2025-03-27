@@ -88,16 +88,16 @@ xpaths = {
     #            },
     #        }
     #    },
-        "Abandoned Locations2": {
-            "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div[2]/div/div',
-            "subfolders": {
-                "All": {
-                    'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div[3]/div[1]/div/div[2]/div',
-                    'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div[3]/div[2]/div',
-                    'pins': 2102
-                },
-            }
-        },
+    #?    "Abandoned Locations2": {
+    #?        "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div[2]/div/div',
+    #?        "subfolders": {
+    #?            "All": {
+    #?                'xpath': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div[3]/div[1]/div/div[2]/div',
+    #?                'location_base': '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[6]/div/div[3]/div[3]/div[2]/div',
+    #?                'pins': 2102
+    #?            },
+    #?        }
+    #?    },
         "More Abandoned Buildings": {
             "closed": '//*[@id="legendPanel"]/div/div/div[2]/div/div/div[2]/div[7]/div/div[3]/div[2]/div/div',
             "subfolders": {
