@@ -97,8 +97,8 @@ xpaths = {
 # }
 
 # Define possible strings for name and description labels
-possible_name_labels = ["name"]
-possible_description_labels = ["description"]
+possible_name_labels = ["name", "nom"]
+possible_description_labels = ["description", "le description"]
 
 # Function to log messages
 def log_message(message):
