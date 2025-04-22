@@ -239,43 +239,43 @@ def process_folder(folder_name, folder_data):
     try:
         log_message(f"═════════ PROCESSING PARENT FOLDER: {folder_name.upper()} ═════════")
         log_message(f"Looking for folder element using XPath: {folder_data['closed']}")
-        
+
         # Open parent folder
         closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
         log_message("Found parent folder element. Attempting to expand...")
-        
+
         if not safe_click(closed_folder):
             log_message(f"⚠️ Failed to expand parent folder: {folder_name}")
             return
-            
+
         log_message(f"✔ Successfully expanded parent folder: {folder_name}")
         time.sleep(1)
-        
+
         # Check if there are subfolders
         if "subfolders" in folder_data and folder_data["subfolders"]:
             log_message(f"Found {len(folder_data['subfolders'])} subfolders in {folder_name}")
-            
+
             for subfolder_name, subfolder_data in folder_data["subfolders"].items():
                 try:
                     log_message(f"\n├── PROCESSING SUBFOLDER: {subfolder_name}")
                     log_message(f"│   Looking for subfolder element using XPath: {subfolder_data['xpath']}")
-                    
+
                     # Open subfolder
                     subfolder = wait.until(EC.element_to_be_clickable((By.XPATH, subfolder_data['xpath'])))
                     if not safe_click(subfolder):
                         log_message(f"│   ⚠️ Failed to open subfolder: {subfolder_name}")
                         continue
-                        
+
                     log_message(f"│   ✔ Successfully opened subfolder: {subfolder_name}")
                     time.sleep(1)
-                    
+
                     # Process locations in subfolder
                     log_message(f"│   Preparing to process {subfolder_data['pins']} locations...")
                     for i in range(1, subfolder_data['pins'] + 1):
                         log_message(f"│   └── Processing location {i}/{subfolder_data['pins']}")
-                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i, 
+                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i,
                                        f"{folder_name}/{subfolder_name}")
-                
+
                 except Exception as e:
                     log_message(f"│   ⚠️ Error processing subfolder {subfolder_name}: {str(e)}")
         else:
@@ -287,7 +287,7 @@ def process_folder(folder_name, folder_data):
                     process_location(folder_data['closed'], folder_data['location_base'], i, folder_name)
             else:
                 log_message(f"⚠️ No locations found in parent folder {folder_name}")
-                    
+
     except Exception as e:
         log_message(f"⚠️ Critical error processing folder {folder_name}: {str(e)}")
 
@@ -296,18 +296,18 @@ def process_location(location_xpath, location_base, index, folder_path=""):
         log_message(f"\n{'='*50}")
         log_message(f"PROCESSING LOCATION {index} (XPath: {location_base}[{index}])")
         log_message(f"{'='*50}")
-        
+
         # CLICK LOCATION
         location = wait.until(EC.element_to_be_clickable((By.XPATH, f'{location_base}[{index}]')))
         log_message("Location element found, attempting click...")
-        
+
         if not safe_click(location):
             log_message("❌ Failed to click location")
             return False
-        
+
         log_message("✅ Location clicked successfully")
         time.sleep(1)  # Wait for animation
-        
+
         # WAIT FOR DETAILS PANEL
         try:
             wait.until(lambda d: d.find_element(By.XPATH, xpaths["details_panel"]).is_displayed())
@@ -315,26 +315,26 @@ def process_location(location_xpath, location_base, index, folder_path=""):
         except Exception as e:
             log_message(f"❌ Details panel failed to appear: {str(e)}")
             return False
-        
+
         # EXTRACT DATA
         name, description = extract_name_and_description()
-        
+
         # GET COORDINATES
         log_message("Attempting to get coordinates...")
         try:
             nav_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["navigation_button"])))
             safe_click(nav_button)
             log_message("✅ Navigation button clicked")
-            
+
             # Switch to new tab
             driver.switch_to.window(driver.window_handles[1])
             log_message(f"New tab opened, current URL: {driver.current_url[:100]}...")
-            
+
             # Get coordinates
             current_url = driver.current_url
             lat, lon = extract_coordinates(current_url)
             log_message(f"✅ Extracted coordinates: {lat}, {lon}")
-            
+
             # Close tab and switch back
             driver.close()
             driver.switch_to.window(driver.window_handles[0])
@@ -346,12 +346,12 @@ def process_location(location_xpath, location_base, index, folder_path=""):
                 driver.switch_to.window(driver.window_handles[0])
             except:
                 pass
-        
+
         # SAVE DATA
         log_message("Saving location data...")
         save_location_data(folder_path, name, description, lat, lon, index)
         log_message("✅ Data saved successfully")
-        
+
         # RETURN TO LIST
         try:
             back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
@@ -361,9 +361,9 @@ def process_location(location_xpath, location_base, index, folder_path=""):
         except Exception as e:
             log_message(f"❌ Error returning to list: {str(e)}")
             return False
-        
+
         return True
-        
+
     except Exception as e:
         log_message(f"❌ CRITICAL ERROR in process_location: {str(e)}")
         # Attempt recovery
@@ -382,7 +382,7 @@ def save_location_data(folder_path, name, description, lat, lon, index):
     clean_path = folder_path.replace(" ", "_").replace("/", "_").lower()
     filename = f"{clean_path}.csv" if clean_path else "locations.csv"
     filepath = os.path.join(output_folder, filename)
-    
+
     data = {
         "Name": name,
         "Description": description,
@@ -390,7 +390,7 @@ def save_location_data(folder_path, name, description, lat, lon, index):
         "Longitude": lon,
         "Index": index
     }
-    
+
     file_exists = os.path.exists(filepath)
     with open(filepath, "a", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=data.keys())
@@ -406,7 +406,7 @@ def process_folder(folder_name, folder_data):
         safe_click(closed_folder)
         log_message(f"Processing folder: {folder_name}")
         time.sleep(1)
-        
+
         # Check if there are subfolders
         if "subfolders" in folder_data and folder_data["subfolders"]:
             for subfolder_name, subfolder_data in folder_data["subfolders"].items():
@@ -416,12 +416,12 @@ def process_folder(folder_name, folder_data):
                     safe_click(subfolder)
                     log_message(f"Processing subfolder: {subfolder_name}")
                     time.sleep(1)
-                    
+
                     # Process locations in subfolder
                     for i in range(1, subfolder_data['pins'] + 1):
-                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i, 
+                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i,
                                         f"{folder_name}/{subfolder_name}")
-                
+
                 except Exception as e:
                     log_message(f"Error processing subfolder {subfolder_name}: {str(e)}")
         else:
@@ -429,7 +429,7 @@ def process_folder(folder_name, folder_data):
             if 'location_base' in folder_data:  # Check if parent has direct locations
                 for i in range(1, folder_data['pins'] + 1):
                     process_location(folder_data['closed'], folder_data['location_base'], i, folder_name)
-                    
+
     except Exception as e:
         log_message(f"Error processing folder {folder_name}: {str(e)}")
 
@@ -439,11 +439,11 @@ try:
     log_message("\n" + "="*60)
     log_message("STARTING SCRIPT EXECUTION".center(60))
     log_message("="*60 + "\n")
-    
+
     # Process each parent folder
     for folder_name, folder_data in xpaths["parent_folders"].items():
         process_folder(folder_name, folder_data)
-            
+
 except Exception as e:
     log_message("\n" + "!"*60)
     log_message(f"CRITICAL ERROR: {str(e)}".center(60))

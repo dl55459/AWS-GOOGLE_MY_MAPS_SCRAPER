@@ -145,7 +145,7 @@ def extract_name_and_description():
     try:
         # First try to find labeled fields
         details_divs = driver.find_elements(By.XPATH, xpaths["details_panel"] + "//div")
-        
+
         # Check for name labels
         for div in details_divs:
             text = div.text.lower()
@@ -159,7 +159,7 @@ def extract_name_and_description():
                         break
             if name != "N/A":
                 break
-        
+
         # Check for description labels
         for div in details_divs:
             text = div.text.lower()
@@ -173,13 +173,13 @@ def extract_name_and_description():
                         break
             if description != "N/A":
                 break
-        
+
         # Fallback if no labels found
         if name == "N/A" and details_divs:
             name = details_divs[0].text.split('\n')[0] if details_divs[0].text else "N/A"
         if description == "N/A" and details_divs:
             description = '\n'.join(details_divs[0].text.split('\n')[1:]) if details_divs[0].text else "N/A"
-            
+
     except Exception as e:
         log_message(f"Error extracting name or description: {str(e)}")
     return name, description
@@ -189,26 +189,26 @@ def process_folder(folder_name, folder_data):
     try:
         log_message(f"═════════ PROCESSING FOLDER: {folder_name.upper()} ═════════")
         log_message(f"Looking for folder element using XPath: {folder_data['closed']}")
-        
+
         # Open parent folder
         closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
         log_message("Found folder element. Attempting to expand...")
-        
+
         if not safe_click(closed_folder):
             log_message(f"⚠️ Failed to expand folder: {folder_name}")
             return
-            
+
         log_message(f"✔ Successfully expanded folder: {folder_name}")
         time.sleep(1)
-        
+
         # Process locations directly in the folder
         log_message(f"Preparing to process {folder_data['pins']} locations...")
-        
+
         # Note: First location starts with div[3], then increments by 1
         for i in range(3, folder_data['pins'] + 3):
             log_message(f"└── Processing location {i-2}/{folder_data['pins']}")
             process_location(folder_data['closed'], folder_data['location_base'], i, folder_name)
-            
+
     except Exception as e:
         log_message(f"⚠️ Critical error processing folder {folder_name}: {str(e)}")
 
@@ -216,18 +216,18 @@ def process_location(location_xpath, location_base, index, folder_path=""):
     try:
         log_message(f"\n{'='*50}")
         log_message(f"PROCESSING LOCATION {index-2} (XPath: {location_base}[{index}])")
-        
+
         # CLICK LOCATION - note the adjusted XPath for direct locations
         location = wait.until(EC.element_to_be_clickable((By.XPATH, f'{location_base}[{index}]')))
         log_message("Location element found, attempting click...")
-        
+
         if not safe_click(location):
             log_message("❌ Failed to click location")
             return False
-        
+
         log_message("✅ Location clicked successfully")
         time.sleep(1)
-        
+
         # WAIT FOR DETAILS PANEL
         try:
             wait.until(lambda d: d.find_element(By.XPATH, xpaths["details_panel"]).is_displayed())
@@ -235,26 +235,26 @@ def process_location(location_xpath, location_base, index, folder_path=""):
         except Exception as e:
             log_message(f"❌ Details panel failed to appear: {str(e)}")
             return False
-        
+
         # EXTRACT DATA
         name, description = extract_name_and_description()
-        
+
         # GET COORDINATES
         log_message("Attempting to get coordinates...")
         try:
             nav_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["navigation_button"])))
             safe_click(nav_button)
             log_message("✅ Navigation button clicked")
-            
+
             # Switch to new tab
             driver.switch_to.window(driver.window_handles[1])
             log_message(f"New tab opened, current URL: {driver.current_url[:100]}...")
-            
+
             # Get coordinates
             current_url = driver.current_url
             lat, lon = extract_coordinates(current_url)
             log_message(f"✅ Extracted coordinates: {lat}, {lon}")
-            
+
             # Close tab and switch back
             driver.close()
             driver.switch_to.window(driver.window_handles[0])
@@ -266,12 +266,12 @@ def process_location(location_xpath, location_base, index, folder_path=""):
                 driver.switch_to.window(driver.window_handles[0])
             except:
                 pass
-        
+
         # SAVE DATA
         log_message("Saving location data...")
         save_location_data(folder_path, name, description, lat, lon, index-2)  # Adjust index for 1-based counting
         log_message("✅ Data saved successfully")
-        
+
         # RETURN TO LIST
         try:
             back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
@@ -281,9 +281,9 @@ def process_location(location_xpath, location_base, index, folder_path=""):
         except Exception as e:
             log_message(f"❌ Error returning to list: {str(e)}")
             return False
-        
+
         return True
-        
+
     except Exception as e:
         log_message(f"❌ CRITICAL ERROR in process_location: {str(e)}")
         try:
@@ -301,7 +301,7 @@ def save_location_data(folder_path, name, description, lat, lon, index):
     clean_path = folder_path.replace(" ", "_").lower()
     filename = f"{clean_path}.csv"
     filepath = os.path.join(output_folder, filename)
-    
+
     # Clean the data by encoding/decoding to handle special characters
     def clean_text(text):
         if text is None:
@@ -309,7 +309,7 @@ def save_location_data(folder_path, name, description, lat, lon, index):
         if isinstance(text, str):
             return text.encode('utf-8', errors='replace').decode('utf-8')
         return str(text)
-    
+
     data = {
         "Name": clean_text(name),
         "Description": clean_text(description),
@@ -317,25 +317,25 @@ def save_location_data(folder_path, name, description, lat, lon, index):
         "Longitude": lon,
         "Index": index
     }
-    
+
     file_exists = os.path.exists(filepath)
     with open(filepath, "a", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=data.keys())
         if not file_exists:
             writer.writeheader()
         writer.writerow(data)
-        
+
 # Main execution
 try:
     start_time = time.time()
     log_message("\n" + "="*60)
     log_message("STARTING SCRIPT EXECUTION".center(60))
     log_message("="*60 + "\n")
-    
+
     # Process each parent folder
     for folder_name, folder_data in xpaths["parent_folders"].items():
         process_folder(folder_name, folder_data)
-            
+
 except Exception as e:
     log_message("\n" + "!"*60)
     log_message(f"CRITICAL ERROR: {str(e)}".center(60))
