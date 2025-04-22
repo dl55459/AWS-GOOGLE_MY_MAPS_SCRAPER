@@ -192,8 +192,7 @@ def process_folder(folder_name, folder_data):
                     log_message(f"│   Preparing to process {subfolder_data['pins']} locations...")
                     for i in range(1, subfolder_data['pins'] + 1):
                         log_message(f"│   └── Processing location {i}/{subfolder_data['pins']}")
-                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i,
-                                       f"{folder_name}/{subfolder_name}")
+                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i, f"{folder_name}/{subfolder_name}")
 
                 except Exception as e:
                     log_message(f"│   ⚠️ Error processing subfolder {subfolder_name}: {str(e)}")

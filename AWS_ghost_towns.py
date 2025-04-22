@@ -238,60 +238,84 @@ def process_folder(folder_name, folder_data):
     """Process a parent folder with optional subfolders"""
     try:
         log_message(f"═════════ PROCESSING PARENT FOLDER: {folder_name.upper()} ═════════")
-        log_message(f"Looking for folder element using XPath: {folder_data['closed']}")
-
-        # Open parent folder
-        closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
-        log_message("Found parent folder element. Attempting to expand...")
-
-        if not safe_click(closed_folder):
-            log_message(f"⚠️ Failed to expand parent folder: {folder_name}")
+        if not expand_folder(folder_name, folder_data):
             return
 
-        log_message(f"✔ Successfully expanded parent folder: {folder_name}")
-        time.sleep(1)
-
-        # Check if there are subfolders
         if "subfolders" in folder_data and folder_data["subfolders"]:
-            log_message(f"Found {len(folder_data['subfolders'])} subfolders in {folder_name}")
-
-            for subfolder_name, subfolder_data in folder_data["subfolders"].items():
-                try:
-                    log_message(f"\n├── PROCESSING SUBFOLDER: {subfolder_name}")
-                    log_message(f"│   Looking for subfolder element using XPath: {subfolder_data['xpath']}")
-
-                    # Open subfolder
-                    subfolder = wait.until(EC.element_to_be_clickable((By.XPATH, subfolder_data['xpath'])))
-                    if not safe_click(subfolder):
-                        log_message(f"│   ⚠️ Failed to open subfolder: {subfolder_name}")
-                        continue
-
-                    log_message(f"│   ✔ Successfully opened subfolder: {subfolder_name}")
-                    time.sleep(1)
-
-                    # Process locations in subfolder
-                    log_message(f"│   Preparing to process {subfolder_data['pins']} locations...")
-                    for i in range(1, subfolder_data['pins'] + 1):
-                        log_message(f"│   └── Processing location {i}/{subfolder_data['pins']}")
-                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i,
-                                       f"{folder_name}/{subfolder_name}")
-
-                except Exception as e:
-                    log_message(f"│   ⚠️ Error processing subfolder {subfolder_name}: {str(e)}")
+            process_subfolders(folder_name, folder_data["subfolders"])
         else:
-            log_message(f"No subfolders found in {folder_name}, checking for direct locations...")
-            if 'location_base' in folder_data:
-                log_message(f"Found direct locations in parent folder. Processing {folder_data['pins']} locations...")
-                for i in range(1, folder_data['pins'] + 1):
-                    log_message(f"└── Processing location {i}/{folder_data['pins']} in parent folder")
-                    process_location(folder_data['closed'], folder_data['location_base'], i, folder_name)
-            else:
-                log_message(f"⚠️ No locations found in parent folder {folder_name}")
+            process_direct_locations(folder_name, folder_data)
 
     except Exception as e:
         log_message(f"⚠️ Critical error processing folder {folder_name}: {str(e)}")
 
-def process_location(location_xpath, location_base, index, folder_path=""):
+
+def expand_folder(folder_name, folder_data):
+    """Expand the parent folder"""
+    try:
+        log_message(f"Looking for folder element using XPath: {folder_data['closed']}")
+        closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
+        log_message("Found parent folder element. Attempting to expand...")
+        if not safe_click(closed_folder):
+            log_message(f"⚠️ Failed to expand parent folder: {folder_name}")
+            return False
+        log_message(f"✔ Successfully expanded parent folder: {folder_name}")
+        time.sleep(1)
+        return True
+    except Exception as e:
+        log_message(f"⚠️ Error expanding folder {folder_name}: {str(e)}")
+        return False
+
+
+def process_subfolders(folder_name, subfolders):
+    """Process all subfolders within a parent folder"""
+    log_message(f"Found {len(subfolders)} subfolders in {folder_name}")
+    for subfolder_name, subfolder_data in subfolders.items():
+        try:
+            log_message(f"\n├── PROCESSING SUBFOLDER: {subfolder_name}")
+            if not expand_subfolder(subfolder_name, subfolder_data):
+                continue
+            process_locations(subfolder_name, subfolder_data, folder_name)
+        except Exception as e:
+            log_message(f"│   ⚠️ Error processing subfolder {subfolder_name}: {str(e)}")
+
+
+def expand_subfolder(subfolder_name, subfolder_data):
+    """Expand a subfolder"""
+    try:
+        log_message(f"│   Looking for subfolder element using XPath: {subfolder_data['xpath']}")
+        subfolder = wait.until(EC.element_to_be_clickable((By.XPATH, subfolder_data['xpath'])))
+        if not safe_click(subfolder):
+            log_message(f"│   ⚠️ Failed to open subfolder: {subfolder_name}")
+            return False
+        log_message(f"│   ✔ Successfully opened subfolder: {subfolder_name}")
+        time.sleep(1)
+        return True
+    except Exception as e:
+        log_message(f"│   ⚠️ Error expanding subfolder {subfolder_name}: {str(e)}")
+        return False
+
+
+def process_direct_locations(folder_name, folder_data):
+    """Process locations directly in a parent folder"""
+    log_message(f"No subfolders found in {folder_name}, checking for direct locations...")
+    if 'location_base' in folder_data:
+        log_message(f"Found direct locations in parent folder. Processing {folder_data['pins']} locations...")
+        for i in range(1, folder_data['pins'] + 1):
+            log_message(f"└── Processing location {i}/{folder_data['pins']} in parent folder")
+            process_location(folder_data['location_base'], i, folder_name)
+    else:
+        log_message(f"⚠️ No locations found in parent folder {folder_name}")
+
+
+def process_locations(subfolder_name, subfolder_data, folder_name):
+    """Process all locations within a subfolder"""
+    log_message(f"│   Preparing to process {subfolder_data['pins']} locations...")
+    for i in range(1, subfolder_data['pins'] + 1):
+        log_message(f"│   └── Processing location {i}/{subfolder_data['pins']}")
+        process_location(subfolder_data['location_base'], i, f"{folder_name}/{subfolder_name}")
+
+def process_location(location_base, index, folder_path=""):
     try:
         log_message(f"\n{'='*50}")
         log_message(f"PROCESSING LOCATION {index} (XPath: {location_base}[{index}])")
@@ -344,7 +368,7 @@ def process_location(location_xpath, location_base, index, folder_path=""):
             lat, lon = None, None
             try:
                 driver.switch_to.window(driver.window_handles[0])
-            except:
+            except Exception:
                 pass
 
         # SAVE DATA
@@ -373,7 +397,7 @@ def process_location(location_xpath, location_base, index, folder_path=""):
                 driver.switch_to.window(driver.window_handles[0])
             back_button = wait.until(EC.element_to_be_clickable((By.XPATH, xpaths["back_button"])))
             safe_click(back_button)
-        except:
+        except Exception:
             log_message("Could not recover from error")
         return False
 
@@ -401,37 +425,57 @@ def save_location_data(folder_path, name, description, lat, lon, index):
 def process_folder(folder_name, folder_data):
     """Process a parent folder with optional subfolders"""
     try:
-        # Open parent folder
-        closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
-        safe_click(closed_folder)
-        log_message(f"Processing folder: {folder_name}")
-        time.sleep(1)
-
-        # Check if there are subfolders
-        if "subfolders" in folder_data and folder_data["subfolders"]:
-            for subfolder_name, subfolder_data in folder_data["subfolders"].items():
-                try:
-                    # Open subfolder
-                    subfolder = wait.until(EC.element_to_be_clickable((By.XPATH, subfolder_data['xpath'])))
-                    safe_click(subfolder)
-                    log_message(f"Processing subfolder: {subfolder_name}")
-                    time.sleep(1)
-
-                    # Process locations in subfolder
-                    for i in range(1, subfolder_data['pins'] + 1):
-                        process_location(subfolder_data['xpath'], subfolder_data['location_base'], i,
-                                        f"{folder_name}/{subfolder_name}")
-
-                except Exception as e:
-                    log_message(f"Error processing subfolder {subfolder_name}: {str(e)}")
+        expand_parent_folder(folder_name, folder_data)
+        if has_subfolders(folder_data):
+            process_all_subfolders(folder_name, folder_data["subfolders"])
         else:
-            # Process locations directly in parent folder if no subfolders
-            if 'location_base' in folder_data:  # Check if parent has direct locations
-                for i in range(1, folder_data['pins'] + 1):
-                    process_location(folder_data['closed'], folder_data['location_base'], i, folder_name)
-
+            process_direct_locations_in_folder(folder_name, folder_data)
     except Exception as e:
         log_message(f"Error processing folder {folder_name}: {str(e)}")
+
+
+def expand_parent_folder(folder_name, folder_data):
+    """Expand the parent folder"""
+    closed_folder = wait.until(EC.element_to_be_clickable((By.XPATH, folder_data["closed"])))
+    safe_click(closed_folder)
+    log_message(f"Processing folder: {folder_name}")
+    time.sleep(1)
+
+
+def has_subfolders(folder_data):
+    """Check if the folder has subfolders"""
+    return "subfolders" in folder_data and folder_data["subfolders"]
+
+
+def process_all_subfolders(folder_name, subfolders):
+    """Process all subfolders within a parent folder"""
+    for subfolder_name, subfolder_data in subfolders.items():
+        try:
+            process_single_subfolder(folder_name, subfolder_name, subfolder_data)
+        except Exception as e:
+            log_message(f"Error processing subfolder {subfolder_name}: {str(e)}")
+
+
+def process_single_subfolder(folder_name, subfolder_name, subfolder_data):
+    """Process a single subfolder"""
+    subfolder = wait.until(EC.element_to_be_clickable((By.XPATH, subfolder_data['xpath'])))
+    safe_click(subfolder)
+    log_message(f"Processing subfolder: {subfolder_name}")
+    time.sleep(1)
+    process_locations_in_subfolder(folder_name, subfolder_name, subfolder_data)
+
+
+def process_locations_in_subfolder(folder_name, subfolder_name, subfolder_data):
+    """Process locations within a subfolder"""
+    for i in range(1, subfolder_data['pins'] + 1):
+        process_location(subfolder_data['location_base'], i, f"{folder_name}/{subfolder_name}")
+
+
+def process_direct_locations_in_folder(folder_name, folder_data):
+    """Process locations directly in a parent folder"""
+    if 'location_base' in folder_data:  # Check if parent has direct locations
+        for i in range(1, folder_data['pins'] + 1):
+            process_location(folder_data['location_base'], i, folder_name)
 
 # Main execution
 try:
