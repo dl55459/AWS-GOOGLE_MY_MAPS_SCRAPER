@@ -7,14 +7,14 @@ from selenium.webdriver.chrome.options import Options
 import time
 import csv
 import os
-import psutil  # For memory usage
-import datetime  # For execution time
+import psutil
+import datetime
 
-# Configuration
-output_folder = "output_ghost_csv"  # Folder to store CSV files (change as needed)
-os.makedirs(output_folder, exist_ok=True)  # Create the folder if it doesn't exist
+#? Configuration
+output_folder = "output_ghost_csv"  #* Folder to store CSV files (change as needed)
+os.makedirs(output_folder, exist_ok=True)  #* Create the folder if it doesn't exist
 
-# Configure Chrome options for headless mode
+#? Configure Chrome options for headless mode
 chrome_options = Options()
 chrome_options.add_argument("--headless")  # Run in headless mode
 chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
